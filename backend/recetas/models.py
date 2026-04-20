@@ -10,17 +10,40 @@ class Perfil(models.Model):
     def __str__(self):
         return f"Perfil de {self.user.username}"
 
-# Receta: (id_receta, titulo, descripcion, tiempo_prep, calorias, imagen_url, fecha_creacion)
+# Receta: (id_receta, titulo, descripcion, tiempo_prep, calorias, categoria, imagen_url, fecha_creacion)
 class Receta(models.Model):
+    CATEGORIAS = [
+        ('Desayuno', 'Desayuno'),
+        ('Almuerzo', 'Almuerzo'),
+        ('Cena', 'Cena'),
+        ('Merienda', 'Merienda'),
+        ('Postre', 'Postre'),
+    ]
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
     tiempo_prep = models.PositiveIntegerField(help_text="Tiempo en minutos")
     calorias = models.PositiveIntegerField()
+    categoria = models.CharField(max_length=20, choices=CATEGORIAS, default='Almuerzo')
     imagen_url = models.URLField(blank=True, null=True)
+    imagen = models.ImageField(upload_to='recetas/', blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    creador = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recetas_creadas')
 
     def __str__(self):
         return self.titulo
+
+
+# PasoReceta: pasos numerados de elaboración de una receta
+class PasoReceta(models.Model):
+    receta = models.ForeignKey(Receta, on_delete=models.CASCADE, related_name='pasos')
+    numero = models.PositiveIntegerField()
+    descripcion = models.TextField()
+
+    class Meta:
+        ordering = ['numero']
+
+    def __str__(self):
+        return f"Paso {self.numero} de {self.receta.titulo}"
 
 # Ingrediente: (id_ingrediente, nombre, unidad_medida)
 class Ingrediente(models.Model):
@@ -52,3 +75,14 @@ class PlanComida(models.Model):
 
     def __str__(self):
         return f"{self.tipo_comida} el {self.fecha} para {self.user.username}"
+
+
+class Favorito(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    receta = models.ForeignKey(Receta, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'receta')
+
+    def __str__(self):
+        return f"{self.user.username} ♥ {self.receta.titulo}"
