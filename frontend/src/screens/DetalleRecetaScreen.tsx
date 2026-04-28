@@ -91,7 +91,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
         receta.ingredientes.map((ri: any) => {
           const cant = parseFloat(ri.cantidad);
           const cantStr = cant % 1 === 0 ? String(Math.round(cant)) : String(Math.round(cant * 100) / 100);
-          const unidad = ri.ingrediente.unidad_medida;
+          const unidad = ri.unidad_medida || ri.ingrediente.unidad_medida;
           const nombre = ri.ingrediente.nombre;
           const sinUnidad = !unidad || unidad === 'al gusto' || unidad === 'para servir' || unidad === 'opcional';
           const linea = sinUnidad

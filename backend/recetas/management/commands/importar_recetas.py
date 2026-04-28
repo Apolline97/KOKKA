@@ -293,6 +293,7 @@ class Command(BaseCommand):
                         receta=receta,
                         ingrediente=ingrediente,
                         cantidad=cantidad,
+                        unidad_medida=unidad,
                     )
 
                 total += 1

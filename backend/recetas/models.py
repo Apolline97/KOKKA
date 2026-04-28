@@ -58,6 +58,7 @@ class RecetaIngrediente(models.Model):
     receta = models.ForeignKey(Receta, on_delete=models.CASCADE)
     ingrediente = models.ForeignKey(Ingrediente, on_delete=models.CASCADE)
     cantidad = models.DecimalField(max_digits=6, decimal_places=2)
+    unidad_medida = models.CharField(max_length=100, default='')
 
     def __str__(self):
         return f"{self.cantidad} {self.ingrediente.unidad_medida} de {self.ingrediente.nombre} en {self.receta.titulo}"
