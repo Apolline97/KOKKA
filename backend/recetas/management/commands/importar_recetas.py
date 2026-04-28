@@ -67,9 +67,10 @@ class Command(BaseCommand):
     help = 'Importa recetas desde TheMealDB y las traduce al español'
 
     def handle(self, *args, **kwargs):
-        if Receta.objects.exists():
-            self.stdout.write('Ya hay recetas en la base de datos, omitiendo importación.')
-            return
+        eliminadas = Receta.objects.filter(creador__username='kokka_admin').count()
+        Receta.objects.filter(creador__username='kokka_admin').delete()
+        if eliminadas:
+            self.stdout.write(f'Eliminadas {eliminadas} recetas de prueba.')
 
         categorias_api = list(CATEGORIA_MAP.keys())
         total = 0
