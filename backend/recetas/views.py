@@ -66,7 +66,9 @@ class RecetaViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Receta.objects.all()
+        queryset = Receta.objects.prefetch_related(
+            'pasos', 'recetaingrediente_set__ingrediente'
+        ).select_related('creador')
         categoria = self.request.query_params.get('categoria')
         search = self.request.query_params.get('search')
         if categoria:

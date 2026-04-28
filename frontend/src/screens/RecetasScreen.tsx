@@ -42,15 +42,19 @@ export default function RecetasScreen({ navigation }: any) {
 
   const cargar = async () => {
     setCargando(true);
-    const [dataRec, dataFav] = await Promise.all([
-      getRecetas({ categoria }),
-      getFavoritos(),
-    ]);
-    if (Array.isArray(dataRec)) setRecetas(dataRec);
-    if (Array.isArray(dataFav)) {
-      setFavoritosIds(new Set(dataFav.map((f: any) => f.receta.id)));
+    try {
+      const [dataRec, dataFav] = await Promise.all([
+        getRecetas({ categoria }),
+        getFavoritos(),
+      ]);
+      if (Array.isArray(dataRec)) setRecetas(dataRec);
+      if (Array.isArray(dataFav)) {
+        setFavoritosIds(new Set(dataFav.map((f: any) => f.receta.id)));
+      }
+    } catch (_) {
+    } finally {
+      setCargando(false);
     }
-    setCargando(false);
   };
 
   useFocusEffect(useCallback(() => { cargar(); }, [categoria]));
