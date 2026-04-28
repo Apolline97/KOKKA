@@ -13,6 +13,7 @@ const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov'
 const DIA_LETRAS = ['L','M','X','J','V','S','D'];
 
 const SORT_OPTIONS = [
+  { label: 'Mejor valoradas', value: 'rating_desc' },
   { label: 'Alfabético (A-Z)', value: 'az' },
   { label: 'Calorías ↑ (menor primero)', value: 'cal_asc' },
   { label: 'Calorías ↓ (mayor primero)', value: 'cal_desc' },
@@ -39,6 +40,7 @@ function getWeekDays() {
 function sortLista(lista: any[], orden: string) {
   const s = [...lista];
   switch (orden) {
+    case 'rating_desc': return s.sort((a, b) => (b.media_valoracion ?? 0) - (a.media_valoracion ?? 0));
     case 'az': return s.sort((a, b) => a.titulo.localeCompare(b.titulo));
     case 'cal_asc': return s.sort((a, b) => a.calorias - b.calorias);
     case 'cal_desc': return s.sort((a, b) => b.calorias - a.calorias);

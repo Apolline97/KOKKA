@@ -12,6 +12,7 @@ const CARD_WIDTH = (width - 16 * 2 - 12) / 2;
 const CATEGORIAS = ['', 'Desayuno', 'Almuerzo', 'Cena', 'Merienda', 'Postre'];
 
 const SORT_OPTIONS = [
+  { label: 'Mejor valoradas', value: 'rating_desc' },
   { label: 'Alfabético (A-Z)', value: 'az' },
   { label: 'Calorías ↑ (menor primero)', value: 'cal_asc' },
   { label: 'Calorías ↓ (mayor primero)', value: 'cal_desc' },
@@ -22,6 +23,7 @@ const SORT_OPTIONS = [
 function sortLista(lista: any[], orden: string) {
   const s = [...lista];
   switch (orden) {
+    case 'rating_desc': return s.sort((a, b) => (b.media_valoracion ?? 0) - (a.media_valoracion ?? 0));
     case 'az': return s.sort((a, b) => a.titulo.localeCompare(b.titulo));
     case 'cal_asc': return s.sort((a, b) => a.calorias - b.calorias);
     case 'cal_desc': return s.sort((a, b) => b.calorias - a.calorias);
