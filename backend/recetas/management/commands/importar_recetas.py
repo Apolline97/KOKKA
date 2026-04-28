@@ -39,6 +39,80 @@ CALORIAS_POR_CATEGORIA = {
     'Postre': (300, 600),
 }
 
+UNIDADES_MAP = {
+    # cucharadas
+    'tablespoon': 'cucharada', 'tablespoons': 'cucharadas',
+    'tbsp': 'cucharada', 'tblsp': 'cucharada', 'tbs': 'cucharada',
+    # cucharaditas
+    'teaspoon': 'cucharadita', 'teaspoons': 'cucharaditas',
+    'tsp': 'cucharadita',
+    # tazas
+    'cup': 'taza', 'cups': 'tazas',
+    # peso
+    'g': 'g', 'gr': 'g', 'gram': 'g', 'grams': 'g',
+    'kg': 'kg', 'kilogram': 'kg', 'kilograms': 'kg',
+    'oz': 'oz', 'ounce': 'onza', 'ounces': 'onzas',
+    'lb': 'libra', 'lbs': 'libras', 'pound': 'libra', 'pounds': 'libras',
+    # volumen
+    'ml': 'ml', 'milliliter': 'ml', 'milliliters': 'ml', 'millilitre': 'ml',
+    'l': 'l', 'liter': 'l', 'liters': 'l', 'litre': 'l',
+    'fl oz': 'fl oz',
+    # pequeñas cantidades
+    'pinch': 'pizca', 'pinches': 'pizcas',
+    'dash': 'chorrito', 'splash': 'chorrito', 'drizzle': 'chorrito',
+    # unidades físicas
+    'piece': 'pieza', 'pieces': 'piezas',
+    'slice': 'rebanada', 'slices': 'rebanadas',
+    'can': 'lata', 'cans': 'latas',
+    'tin': 'lata', 'tins': 'latas',
+    'packet': 'paquete', 'packets': 'paquetes',
+    'bag': 'bolsa', 'bags': 'bolsas',
+    'jar': 'tarro', 'jars': 'tarros',
+    'bottle': 'botella', 'bottles': 'botellas',
+    'bunch': 'manojo', 'bunches': 'manojos',
+    'handful': 'puñado', 'handfuls': 'puñados',
+    'sprig': 'ramita', 'sprigs': 'ramitas',
+    'stalk': 'tallo', 'stalks': 'tallos',
+    'leaf': 'hoja', 'leaves': 'hojas',
+    'head': 'cabeza', 'heads': 'cabezas',
+    'clove': 'diente', 'cloves': 'dientes',
+    'knob': 'nuez', 'scoop': 'cucharón', 'scoops': 'cucharones',
+    'fillet': 'filete', 'fillets': 'filetes',
+    'rasher': 'loncha', 'rashers': 'lonchas',
+    'strip': 'tira', 'strips': 'tiras',
+    'block': 'bloque', 'stick': 'barra', 'sticks': 'barras',
+    'sheet': 'hoja', 'sheets': 'hojas',
+    # tamaños
+    'large': 'grande', 'medium': 'mediano', 'small': 'pequeño',
+    # preparación (cuando aparecen como unidad)
+    'minced': 'picado', 'chopped': 'picado', 'diced': 'en dados',
+    'grated': 'rallado', 'sliced': 'en lonchas', 'crushed': 'machacado',
+    'separated': 'separado', 'beaten': 'batido', 'softened': 'ablandado',
+    'melted': 'derretido', 'cooked': 'cocido', 'coarsely': 'grueso',
+    'finely': 'fino', 'freshly': 'recién', 'ground': 'molido',
+    'halved': 'partido', 'quartered': 'en cuartos', 'whole': 'entero',
+    'frozen': 'congelado', 'fresh': 'fresco', 'dried': 'seco',
+    # para servir
+    'to serve': 'para servir', 'to taste': 'al gusto',
+    'as needed': 'al gusto', 'as required': 'al gusto',
+    'optional': 'opcional', 'for garnish': 'para decorar',
+    'for frying': 'para freír', 'for greasing': 'para engrasar',
+}
+
+
+def traducir_unidad(unidad_en):
+    if not unidad_en:
+        return 'al gusto'
+    lower = unidad_en.lower().strip()
+    if lower in UNIDADES_MAP:
+        return UNIDADES_MAP[lower]
+    # buscar coincidencia parcial por palabra clave
+    for clave, valor in UNIDADES_MAP.items():
+        if clave in lower:
+            return valor
+    return unidad_en  # dejar en inglés si no se encuentra
+
+
 PASO_CABECERA = re.compile(
     r'^(step\s*\d+|paso\s*\d+|etapa\s*\d+|\d+\.?\s*)$',
     re.IGNORECASE
@@ -56,7 +130,7 @@ def traducir(texto):
 
 
 def parsear_medida(cantidad_str):
-    """Extrae (cantidad, unidad) de strings como '200 ml', '1 tsp', '1/2 cup'."""
+    """Extrae (cantidad, unidad_es) de strings como '200 ml', '1 tsp', '1/2 cup'."""
     s = cantidad_str.strip()
     if not s or s.lower() in ('to taste', 'as needed', 'al gusto'):
         return 1.0, 'al gusto'
@@ -66,22 +140,22 @@ def parsear_medida(cantidad_str):
     if fraccion:
         entero, num, den = int(fraccion.group(1)), int(fraccion.group(2)), int(fraccion.group(3))
         cantidad = entero + num / den
-        unidad = s[fraccion.end():].strip()
-        return min(cantidad, 9999.99), unidad or 'al gusto'
+        unidad_en = s[fraccion.end():].strip()
+        return min(cantidad, 9999.99), traducir_unidad(unidad_en)
 
     solo_fraccion = re.match(r'^(\d+)/(\d+)', s)
     if solo_fraccion:
         num, den = int(solo_fraccion.group(1)), int(solo_fraccion.group(2))
-        unidad = s[solo_fraccion.end():].strip()
-        return min(num / den, 9999.99), unidad or 'al gusto'
+        unidad_en = s[solo_fraccion.end():].strip()
+        return min(num / den, 9999.99), traducir_unidad(unidad_en)
 
     numero = re.match(r'^(\d+\.?\d*)', s)
     if numero:
         cantidad = min(float(numero.group(1)), 9999.99)
-        unidad = s[numero.end():].strip()
-        return cantidad, unidad or 'al gusto'
+        unidad_en = s[numero.end():].strip()
+        return cantidad, traducir_unidad(unidad_en)
 
-    return 1.0, s or 'al gusto'
+    return 1.0, traducir_unidad(s)
 
 
 def obtener_ids_por_categoria(categoria_en):
