@@ -12,7 +12,7 @@ import {
 import { getPlanes, getRecetas, crearPlan, deletePlan, getFavoritos } from '../services/api';
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const TIPOS = ['Almuerzo', 'Cena'];
+const TIPOS = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'];
 
 const getLunes = (fecha: Date) => {
   const d = new Date(fecha);
@@ -113,24 +113,33 @@ export default function PlanificadorScreen({ navigation }: any) {
             return (
               <View style={styles.dia}>
                 <Text style={styles.diaNombre}>{item} {fecha.slice(8)}</Text>
-                {TIPOS.map(tipo => {
-                  const plan = getPlan(fecha, tipo);
-                  return (
-                    <View key={tipo} style={styles.slot}>
-                      <TouchableOpacity style={styles.slotContenido} onPress={() => abrirModal(fecha, tipo)}>
-                        <Text style={styles.slotTipo}>{tipo}</Text>
-                        <Text style={styles.slotReceta}>
-                          {plan ? plan.receta.titulo : '+ Añadir receta'}
-                        </Text>
-                      </TouchableOpacity>
-                      {plan && (
-                        <TouchableOpacity style={styles.slotEliminar} onPress={() => eliminarPlan(plan.id)}>
-                          <Text style={styles.slotEliminarTexto}>✕</Text>
+                <View style={styles.slotsGrid}>
+                  {TIPOS.map(tipo => {
+                    const plan = getPlan(fecha, tipo);
+                    return (
+                      <View key={tipo} style={styles.slotWrapper}>
+                        <TouchableOpacity
+                          style={styles.slot}
+                          onPress={() => abrirModal(fecha, tipo)}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={styles.slotTipo}>{tipo}</Text>
+                          <Text style={styles.slotReceta} numberOfLines={2}>
+                            {plan ? plan.receta.titulo : '+ Añadir'}
+                          </Text>
                         </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                })}
+                        {plan && (
+                          <TouchableOpacity
+                            style={styles.slotEliminar}
+                            onPress={() => eliminarPlan(plan.id)}
+                          >
+                            <Text style={styles.slotEliminarTexto}>✕</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
             );
           }}
@@ -184,14 +193,21 @@ const styles = StyleSheet.create({
   navegacion: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   navBoton: { color: '#e07a5f', fontWeight: 'bold', fontSize: 15 },
   semanaTexto: { fontSize: 12, color: '#555' },
-  dia: { marginBottom: 12, borderRadius: 8, backgroundColor: '#fef0eb', padding: 10 },
-  diaNombre: { fontWeight: 'bold', color: '#c1553a', marginBottom: 6, fontSize: 15 },
-  slot: { backgroundColor: '#fffaf7', borderRadius: 6, paddingLeft: 8, marginBottom: 6, borderWidth: 1, borderColor: '#fde3d5', flexDirection: 'row', alignItems: 'center' },
-  slotContenido: { flex: 1, paddingVertical: 8 },
-  slotTipo: { fontSize: 11, color: '#888', marginBottom: 2 },
-  slotReceta: { fontSize: 14, color: '#e07a5f', fontWeight: 'bold' },
-  slotEliminar: { padding: 10, justifyContent: 'center' },
-  slotEliminarTexto: { color: '#e63946', fontSize: 16, fontWeight: 'bold' },
+  dia: { marginBottom: 12, borderRadius: 10, backgroundColor: '#fef0eb', padding: 10 },
+  diaNombre: { fontWeight: 'bold', color: '#c1553a', marginBottom: 8, fontSize: 15 },
+  slotsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  slotWrapper: { width: '48%', position: 'relative' },
+  slot: {
+    backgroundColor: '#fffaf7', borderRadius: 8, padding: 8,
+    borderWidth: 1, borderColor: '#fde3d5', minHeight: 60,
+  },
+  slotTipo: { fontSize: 10, color: '#aaa', marginBottom: 4, fontWeight: 'bold', textTransform: 'uppercase' },
+  slotReceta: { fontSize: 12, color: '#e07a5f', fontWeight: 'bold', lineHeight: 16 },
+  slotEliminar: {
+    position: 'absolute', top: 4, right: 4,
+    width: 18, height: 18, justifyContent: 'center', alignItems: 'center',
+  },
+  slotEliminarTexto: { color: '#e63946', fontSize: 12, fontWeight: 'bold' },
   modalFondo: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCaja: { backgroundColor: '#fffaf7', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, maxHeight: '70%' },
   modalTitulo: { fontSize: 18, fontWeight: 'bold', color: '#c1553a', marginBottom: 8 },

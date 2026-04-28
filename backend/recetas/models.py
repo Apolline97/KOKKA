@@ -67,7 +67,9 @@ class RecetaIngrediente(models.Model):
 # PlanComida: (id_plan, id_user, id_receta, fecha, tipo_comida)
 class PlanComida(models.Model):
     TIPOS_COMIDA = [
+        ('Desayuno', 'Desayuno'),
         ('Almuerzo', 'Almuerzo'),
+        ('Merienda', 'Merienda'),
         ('Cena', 'Cena'),
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
