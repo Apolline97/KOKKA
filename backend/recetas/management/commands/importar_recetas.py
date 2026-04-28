@@ -133,7 +133,11 @@ class Command(BaseCommand):
                     )
 
                     try:
-                        cantidad = float(''.join(c for c in cantidad_str if c.isdigit() or c == '.') or '1')
+                        raw = ''.join(c for c in cantidad_str if c.isdigit() or c == '.')
+                        partes = raw.split('.')
+                        if len(partes) > 2:
+                            raw = partes[0] + '.' + partes[1]
+                        cantidad = min(float(raw or '1'), 9999.99)
                     except ValueError:
                         cantidad = 1.0
 
