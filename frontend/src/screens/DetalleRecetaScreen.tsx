@@ -90,7 +90,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
       {receta.ingredientes && receta.ingredientes.length > 0 ? (
         receta.ingredientes.map((ri: any) => (
           <Text key={ri.id} style={styles.item}>
-            • {ri.cantidad} {ri.ingrediente.unidad_medida} de {ri.ingrediente.nombre}
+            • {parseFloat(ri.cantidad) % 1 === 0 ? parseInt(ri.cantidad) : parseFloat(ri.cantidad)} {ri.ingrediente.unidad_medida !== 'al gusto' ? ri.ingrediente.unidad_medida : ''} de {ri.ingrediente.nombre}
           </Text>
         ))
       ) : (

@@ -1,3 +1,4 @@
+import re
 import requests
 import random
 from django.core.management.base import BaseCommand
@@ -38,6 +39,11 @@ CALORIAS_POR_CATEGORIA = {
     'Postre': (300, 600),
 }
 
+PASO_CABECERA = re.compile(
+    r'^(step\s*\d+|paso\s*\d+|etapa\s*\d+|\d+\.?\s*)$',
+    re.IGNORECASE
+)
+
 
 def traducir(texto):
     if not texto:
@@ -47,6 +53,35 @@ def traducir(texto):
         return resultado[0].upper() + resultado[1:] if resultado else ''
     except Exception:
         return texto
+
+
+def parsear_medida(cantidad_str):
+    """Extrae (cantidad, unidad) de strings como '200 ml', '1 tsp', '1/2 cup'."""
+    s = cantidad_str.strip()
+    if not s or s.lower() in ('to taste', 'as needed', 'al gusto'):
+        return 1.0, 'al gusto'
+
+    # Fracciones como "1/2" o "1 1/2"
+    fraccion = re.match(r'^(\d+)\s+(\d+)/(\d+)', s)
+    if fraccion:
+        entero, num, den = int(fraccion.group(1)), int(fraccion.group(2)), int(fraccion.group(3))
+        cantidad = entero + num / den
+        unidad = s[fraccion.end():].strip()
+        return min(cantidad, 9999.99), unidad or 'al gusto'
+
+    solo_fraccion = re.match(r'^(\d+)/(\d+)', s)
+    if solo_fraccion:
+        num, den = int(solo_fraccion.group(1)), int(solo_fraccion.group(2))
+        unidad = s[solo_fraccion.end():].strip()
+        return min(num / den, 9999.99), unidad or 'al gusto'
+
+    numero = re.match(r'^(\d+\.?\d*)', s)
+    if numero:
+        cantidad = min(float(numero.group(1)), 9999.99)
+        unidad = s[numero.end():].strip()
+        return cantidad, unidad or 'al gusto'
+
+    return 1.0, s or 'al gusto'
 
 
 def obtener_ids_por_categoria(categoria_en):
@@ -67,12 +102,17 @@ class Command(BaseCommand):
     help = 'Importa recetas desde TheMealDB y las traduce al español'
 
     def handle(self, *args, **kwargs):
-        eliminadas = Receta.objects.filter(creador__username='kokka_admin').count()
-        Receta.objects.filter(creador__username='kokka_admin').delete()
+        # Borrar recetas importadas previamente (sin creador) para evitar duplicados
+        eliminadas = Receta.objects.filter(creador__isnull=True).count()
+        Receta.objects.filter(creador__isnull=True).delete()
         if eliminadas:
-            self.stdout.write(f'Eliminadas {eliminadas} recetas de prueba.')
+            self.stdout.write(f'Eliminadas {eliminadas} recetas antiguas.')
+
+        # Borrar también las de kokka_admin (recetas de prueba)
+        Receta.objects.filter(creador__username='kokka_admin').delete()
 
         categorias_api = list(CATEGORIA_MAP.keys())
+        ids_vistos = set()
         total = 0
 
         for cat_en in categorias_api:
@@ -82,15 +122,15 @@ class Command(BaseCommand):
             ids = obtener_ids_por_categoria(cat_en)
 
             for meal_id in ids:
+                if meal_id in ids_vistos:
+                    continue
+                ids_vistos.add(meal_id)
+
                 meal = obtener_detalle(meal_id)
                 if not meal:
                     continue
 
                 titulo_en = meal.get('strMeal', '')
-                if Receta.objects.filter(titulo=titulo_en).exists():
-                    self.stdout.write(f'  Ya existe: {titulo_en}')
-                    continue
-
                 titulo = traducir(titulo_en)
                 descripcion = traducir(meal.get('strInstructions', '')[:500])
                 imagen_url = meal.get('strMealThumb', '')
@@ -109,17 +149,23 @@ class Command(BaseCommand):
                     imagen_url=imagen_url,
                 )
 
+                # Pasos: filtrar cabeceras vacías como "STEP 1", "Paso 2"
                 instrucciones = meal.get('strInstructions', '')
                 pasos_raw = [p.strip() for p in instrucciones.split('\n') if p.strip()]
                 if len(pasos_raw) <= 2:
                     pasos_raw = [p.strip() for p in instrucciones.split('.') if len(p.strip()) > 10]
 
-                for i, paso_en in enumerate(pasos_raw[:8], start=1):
-                    paso_es = traducir(paso_en)
-                    if not paso_es:
+                numero = 1
+                for paso_en in pasos_raw[:10]:
+                    if PASO_CABECERA.match(paso_en.strip()):
                         continue
-                    PasoReceta.objects.create(receta=receta, numero=i, descripcion=paso_es)
+                    paso_es = traducir(paso_en)
+                    if not paso_es or len(paso_es) < 5:
+                        continue
+                    PasoReceta.objects.create(receta=receta, numero=numero, descripcion=paso_es)
+                    numero += 1
 
+                # Ingredientes: extraer cantidad y unidad correctamente
                 for j in range(1, 21):
                     nombre_en = meal.get(f'strIngredient{j}', '')
                     cantidad_str = meal.get(f'strMeasure{j}', '').strip()
@@ -127,19 +173,15 @@ class Command(BaseCommand):
                         break
 
                     nombre_es = traducir(nombre_en.strip())
-                    ingrediente, _ = Ingrediente.objects.get_or_create(
-                        nombre=nombre_es,
-                        defaults={'unidad_medida': 'al gusto'}
-                    )
+                    cantidad, unidad = parsear_medida(cantidad_str)
 
-                    try:
-                        raw = ''.join(c for c in cantidad_str if c.isdigit() or c == '.')
-                        partes = raw.split('.')
-                        if len(partes) > 2:
-                            raw = partes[0] + '.' + partes[1]
-                        cantidad = min(float(raw or '1'), 9999.99)
-                    except ValueError:
-                        cantidad = 1.0
+                    ingrediente, creado = Ingrediente.objects.get_or_create(
+                        nombre=nombre_es,
+                        defaults={'unidad_medida': unidad}
+                    )
+                    if not creado and ingrediente.unidad_medida == 'al gusto' and unidad != 'al gusto':
+                        ingrediente.unidad_medida = unidad
+                        ingrediente.save()
 
                     RecetaIngrediente.objects.create(
                         receta=receta,
