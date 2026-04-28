@@ -79,6 +79,7 @@ class RecetaSerializer(serializers.ModelSerializer):
     pasos_nuevos = serializers.CharField(write_only=True, required=False, allow_blank=True)
     imagen = serializers.ImageField(write_only=True, required=False)
     imagen_url = serializers.SerializerMethodField()
+    media_valoracion = serializers.SerializerMethodField()
 
     class Meta:
         model = Receta
