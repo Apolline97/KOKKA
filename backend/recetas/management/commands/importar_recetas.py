@@ -177,9 +177,22 @@ def parsear_medida(cantidad_str):
     if numero:
         cantidad = min(float(numero.group(1)), 9999.99)
         unidad_en = s[numero.end():].strip()
-        return cantidad, traducir_unidad(unidad_en)
+        return convertir_imperial(cantidad, traducir_unidad(unidad_en))
 
     return 1.0, traducir_unidad(s)
+
+
+def convertir_imperial(cantidad, unidad_es):
+    """Convierte onzas y libras a gramos/kg."""
+    if unidad_es in ('oz', 'onza', 'onzas'):
+        gramos = round(cantidad * 28.35 / 5) * 5
+        return min(gramos, 9999), 'g'
+    if unidad_es in ('libra', 'libras'):
+        gramos = cantidad * 453.59
+        if gramos >= 1000:
+            return round(gramos / 1000, 2), 'kg'
+        return round(gramos / 5) * 5, 'g'
+    return cantidad, unidad_es
 
 
 def obtener_ids_por_categoria(categoria_en):
@@ -280,6 +293,14 @@ class Command(BaseCommand):
 
                     nombre_es = traducir(nombre_en.strip())
                     cantidad, unidad = parsear_medida(cantidad_str)
+
+                    # Si el nombre contiene "cubo/cubito" y no hay unidad, es una pastilla de caldo
+                    nombre_lower = nombre_es.lower()
+                    if any(p in nombre_lower for p in ('cubo', 'cubito', 'pastilla')) and not unidad:
+                        unidad = 'pastilla'
+                        for palabra in ('cubo de ', 'cubito de ', 'pastilla de ', ' cubo', ' cubito', ' pastilla'):
+                            nombre_es = nombre_es.replace(palabra, ' ').strip()
+                        nombre_es = nombre_es[0].upper() + nombre_es[1:] if nombre_es else nombre_es
 
                     ingrediente, creado = Ingrediente.objects.get_or_create(
                         nombre=nombre_es,
