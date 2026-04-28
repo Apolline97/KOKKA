@@ -15,10 +15,11 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['192.168.1.34', 'localhost', '127.0.0.1']
 
-# Railway inyecta automáticamente RAILWAY_PUBLIC_DOMAIN con la URL del servidor
-RAILWAY_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
-if RAILWAY_DOMAIN:
-    ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
+# Render inyecta RENDER_EXTERNAL_HOSTNAME automáticamente
+for _host_var in ['RENDER_EXTERNAL_HOSTNAME', 'RAILWAY_PUBLIC_DOMAIN']:
+    _host = os.environ.get(_host_var, '')
+    if _host:
+        ALLOWED_HOSTS.append(_host)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
