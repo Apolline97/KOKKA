@@ -132,7 +132,12 @@ class Command(BaseCommand):
 
                 titulo_en = meal.get('strMeal', '')
                 titulo = traducir(titulo_en)
-                descripcion = traducir(meal.get('strInstructions', '')[:500])
+                area_en = meal.get('strArea', '')
+                area_es = traducir(area_en) if area_en and area_en != 'Unknown' else ''
+                if area_es:
+                    descripcion = f"Receta tradicional de cocina {area_es.lower()}, categoría {cat_es.lower()}."
+                else:
+                    descripcion = f"Receta de {cat_es.lower()}."
                 imagen_url = meal.get('strMealThumb', '')
 
                 tiempo_min, tiempo_max = TIEMPO_POR_CATEGORIA[cat_es]
