@@ -1,27 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getFavoritos, addFavorito, removeFavorito } from '../services/api';
+import { getReceta, getFavoritos, addFavorito, removeFavorito } from '../services/api';
 
 export default function DetalleRecetaScreen({ route, navigation }: any) {
-  const { receta } = route.params;
+  const { receta: recetaBase } = route.params;
+  const [receta, setReceta] = useState<any>(recetaBase);
+  const [cargando, setCargando] = useState(true);
   const [esFavorito, setEsFavorito] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
 
   useEffect(() => {
-    const comprobar = async () => {
-      const [dataFavs, storedId] = await Promise.all([
-        getFavoritos(),
-        AsyncStorage.getItem('user_id'),
-      ]);
-      if (Array.isArray(dataFavs)) {
-        setEsFavorito(dataFavs.some((f: any) => f.receta.id === receta.id));
+    const cargar = async () => {
+      try {
+        const [recetaCompleta, dataFavs, storedId] = await Promise.all([
+          getReceta(recetaBase.id),
+          getFavoritos(),
+          AsyncStorage.getItem('user_id'),
+        ]);
+        if (recetaCompleta?.id) setReceta(recetaCompleta);
+        if (Array.isArray(dataFavs)) {
+          setEsFavorito(dataFavs.some((f: any) => f.receta.id === recetaBase.id));
+        }
+        if (storedId) setUserId(parseInt(storedId));
+      } catch (_) {
+      } finally {
+        setCargando(false);
       }
-      if (storedId) setUserId(parseInt(storedId));
     };
-    comprobar();
+    cargar();
   }, []);
 
   const toggleFavorito = async () => {
@@ -33,6 +42,14 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
       setEsFavorito(true);
     }
   };
+
+  if (cargando) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#e07a5f" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -99,6 +116,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fffaf7' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fffaf7' },
   imagen: { width: '100%', height: 220 },
   volver: { marginBottom: 12, paddingHorizontal: 16, paddingTop: 48 },
   volverTexto: { color: '#e07a5f', fontSize: 16 },
