@@ -98,6 +98,9 @@ export default function RecetasScreen({ navigation }: any) {
           <Text style={styles.tiempoTagTexto}>{'<'}{item.tiempo_prep}min</Text>
         </View>
         <Text style={styles.calTexto}>{item.calorias} kcal</Text>
+        {item.media_valoracion ? (
+          <Text style={styles.ratingTexto}>★ {item.media_valoracion}</Text>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -225,6 +228,7 @@ const styles = StyleSheet.create({
   tiempoTag: { backgroundColor: '#4caf50', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
   tiempoTagTexto: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   calTexto: { fontSize: 10, color: '#888' },
+  ratingTexto: { fontSize: 10, color: '#e07a5f', fontWeight: 'bold' },
   vacio: { textAlign: 'center', color: '#bbb', marginTop: 40, fontStyle: 'italic' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalBox: {

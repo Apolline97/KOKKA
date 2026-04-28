@@ -78,6 +78,21 @@ class PlanComida(models.Model):
         return f"{self.tipo_comida} el {self.fecha} para {self.user.username}"
 
 
+class Valoracion(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    receta = models.ForeignKey(Receta, on_delete=models.CASCADE)
+    puntuacion = models.PositiveSmallIntegerField()
+    comentario = models.TextField(blank=True, default='')
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'receta')
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"{self.user.username} → {self.receta.titulo} ({self.puntuacion}★)"
+
+
 class Favorito(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     receta = models.ForeignKey(Receta, on_delete=models.CASCADE)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Perfil, Receta, PasoReceta, Ingrediente, RecetaIngrediente, PlanComida, Favorito
+from django.db.models import Avg
+from .models import Perfil, Receta, PasoReceta, Ingrediente, RecetaIngrediente, PlanComida, Favorito, Valoracion
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -40,12 +41,21 @@ class RecetaIngredienteSerializer(serializers.ModelSerializer):
         fields = ['id', 'ingrediente', 'ingrediente_id', 'cantidad', 'unidad_medida']
 
 
+class ValoracionSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Valoracion
+        fields = ['id', 'username', 'puntuacion', 'comentario', 'fecha']
+
+
 class RecetaListSerializer(serializers.ModelSerializer):
     imagen_url = serializers.SerializerMethodField()
+    media_valoracion = serializers.SerializerMethodField()
 
     class Meta:
         model = Receta
-        fields = ['id', 'titulo', 'tiempo_prep', 'calorias', 'categoria', 'imagen_url']
+        fields = ['id', 'titulo', 'tiempo_prep', 'calorias', 'categoria', 'imagen_url', 'media_valoracion']
 
     def get_imagen_url(self, obj):
         if obj.imagen:
@@ -53,6 +63,11 @@ class RecetaListSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.imagen.url)
         return obj.imagen_url
+
+    def get_media_valoracion(self, obj):
+        result = obj.valoracion_set.aggregate(media=Avg('puntuacion'))
+        media = result['media']
+        return round(media, 1) if media else None
 
 
 class RecetaSerializer(serializers.ModelSerializer):
@@ -70,8 +85,13 @@ class RecetaSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'titulo', 'descripcion', 'tiempo_prep',
             'calorias', 'categoria', 'imagen_url', 'imagen', 'fecha_creacion',
-            'creador', 'ingredientes', 'pasos', 'pasos_nuevos'
+            'creador', 'ingredientes', 'pasos', 'pasos_nuevos', 'media_valoracion'
         ]
+
+    def get_media_valoracion(self, obj):
+        result = obj.valoracion_set.aggregate(media=Avg('puntuacion'))
+        media = result['media']
+        return round(media, 1) if media else None
 
     def get_imagen_url(self, obj):
         if obj.imagen:

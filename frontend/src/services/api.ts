@@ -159,6 +159,23 @@ export const deletePlan = async (id: number) => {
   await fetch(`${BASE_URL}/planes/${id}/`, { method: 'DELETE', headers });
 };
 
+// Valoraciones
+export const getValoraciones = async (receta_id: number) => {
+  const headers = await authHeaders();
+  const res = await fetch(`${BASE_URL}/valoraciones/?receta_id=${receta_id}`, { headers });
+  return res.json();
+};
+
+export const crearValoracion = async (receta_id: number, puntuacion: number, comentario: string) => {
+  const headers = await authHeaders();
+  const res = await fetch(`${BASE_URL}/valoraciones/`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ receta_id, puntuacion, comentario }),
+  });
+  return res.json();
+};
+
 export const editarReceta = async (
   id: number,
   data: {

@@ -6,10 +6,11 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.db.models import Q
-from .models import Perfil, Receta, PasoReceta, Ingrediente, RecetaIngrediente, PlanComida, Favorito
+from .models import Perfil, Receta, PasoReceta, Ingrediente, RecetaIngrediente, PlanComida, Favorito, Valoracion
 from .serializers import (
     PerfilSerializer, RecetaSerializer, RecetaListSerializer, PasoRecetaSerializer,
-    IngredienteSerializer, RecetaIngredienteSerializer, PlanComidaSerializer, FavoritoSerializer
+    IngredienteSerializer, RecetaIngredienteSerializer, PlanComidaSerializer, FavoritoSerializer,
+    ValoracionSerializer
 )
 
 
@@ -71,7 +72,7 @@ class RecetaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Receta.objects.prefetch_related(
-            'pasos', 'recetaingrediente_set__ingrediente'
+            'pasos', 'recetaingrediente_set__ingrediente', 'valoracion_set'
         ).select_related('creador')
         categoria = self.request.query_params.get('categoria')
         search = self.request.query_params.get('search')
@@ -185,3 +186,36 @@ class MiPerfilView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ValoracionesView(APIView):
+    """Obtener y crear/actualizar valoraciones de una receta."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        receta_id = request.query_params.get('receta_id')
+        if not receta_id:
+            return Response([])
+        valoraciones = Valoracion.objects.filter(receta_id=receta_id).select_related('user')
+        serializer = ValoracionSerializer(valoraciones, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        receta_id = request.data.get('receta_id')
+        puntuacion = request.data.get('puntuacion')
+        comentario = request.data.get('comentario', '')
+
+        if not receta_id or not puntuacion:
+            return Response({'error': 'receta_id y puntuacion son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            receta = Receta.objects.get(id=receta_id)
+        except Receta.DoesNotExist:
+            return Response({'error': 'Receta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        valoracion, _ = Valoracion.objects.update_or_create(
+            user=request.user,
+            receta=receta,
+            defaults={'puntuacion': int(puntuacion), 'comentario': comentario}
+        )
+        return Response(ValoracionSerializer(valoracion).data, status=status.HTTP_201_CREATED)

@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     RecetaViewSet, PasoRecetaViewSet, IngredienteViewSet,
     RecetaIngredienteViewSet, PlanComidaViewSet, PerfilViewSet,
-    RegistroView, LoginView, MiPerfilView, FavoritosView
+    RegistroView, LoginView, MiPerfilView, FavoritosView, ValoracionesView
 )
 
 router = DefaultRouter()
@@ -20,4 +20,5 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view()),
     path('auth/perfil/', MiPerfilView.as_view()),
     path('favoritos/', FavoritosView.as_view()),
+    path('valoraciones/', ValoracionesView.as_view()),
 ]
