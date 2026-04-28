@@ -6,6 +6,7 @@ class Perfil(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     preferencias = models.TextField(blank=True, null=True, help_text="Ej: Vegano, sin gluten")
     alergias = models.TextField(blank=True, null=True)
+    foto = models.ImageField(upload_to='perfiles/', blank=True, null=True)
 
     def __str__(self):
         return f"Perfil de {self.user.username}"

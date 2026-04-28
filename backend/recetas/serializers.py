@@ -12,10 +12,19 @@ class UserSerializer(serializers.ModelSerializer):
 
 class PerfilSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    foto = serializers.ImageField(required=False, allow_null=True)
+    foto_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Perfil
-        fields = ['id', 'user', 'preferencias', 'alergias']
+        fields = ['id', 'user', 'preferencias', 'alergias', 'foto', 'foto_url']
+
+    def get_foto_url(self, obj):
+        if obj.foto:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.foto.url)
+        return None
 
 
 class IngredienteSerializer(serializers.ModelSerializer):
@@ -47,6 +56,19 @@ class ValoracionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Valoracion
         fields = ['id', 'username', 'puntuacion', 'comentario', 'fecha']
+
+
+class MiValoracionSerializer(serializers.ModelSerializer):
+    receta_id = serializers.IntegerField(source='receta.id', read_only=True)
+    receta_titulo = serializers.CharField(source='receta.titulo', read_only=True)
+    receta_imagen = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Valoracion
+        fields = ['id', 'receta_id', 'receta_titulo', 'receta_imagen', 'puntuacion', 'comentario', 'fecha']
+
+    def get_receta_imagen(self, obj):
+        return obj.receta.imagen_url
 
 
 class RecetaListSerializer(serializers.ModelSerializer):

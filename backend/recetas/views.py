@@ -10,7 +10,7 @@ from .models import Perfil, Receta, PasoReceta, Ingrediente, RecetaIngrediente, 
 from .serializers import (
     PerfilSerializer, RecetaSerializer, RecetaListSerializer, PasoRecetaSerializer,
     IngredienteSerializer, RecetaIngredienteSerializer, PlanComidaSerializer, FavoritoSerializer,
-    ValoracionSerializer
+    ValoracionSerializer, MiValoracionSerializer
 )
 
 
@@ -176,15 +176,27 @@ class MiPerfilView(APIView):
 
     def get(self, request):
         perfil = Perfil.objects.get(user=request.user)
-        serializer = PerfilSerializer(perfil)
+        serializer = PerfilSerializer(perfil, context={'request': request})
         return Response(serializer.data)
 
     def put(self, request):
         perfil = Perfil.objects.get(user=request.user)
-        serializer = PerfilSerializer(perfil, data=request.data, partial=True)
+
+        username = request.data.get('username', '').strip()
+        email = request.data.get('email', '').strip()
+        if username and username != request.user.username:
+            if User.objects.filter(username=username).exclude(pk=request.user.pk).exists():
+                return Response({'error': 'Ese nombre de usuario ya existe'}, status=status.HTTP_400_BAD_REQUEST)
+            request.user.username = username
+        if email:
+            request.user.email = email
+        request.user.save()
+
+        serializer = PerfilSerializer(perfil, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            perfil.user.refresh_from_db()
+            return Response(PerfilSerializer(perfil, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -194,11 +206,11 @@ class ValoracionesView(APIView):
 
     def get(self, request):
         receta_id = request.query_params.get('receta_id')
-        if not receta_id:
-            return Response([])
-        valoraciones = Valoracion.objects.filter(receta_id=receta_id).select_related('user')
-        serializer = ValoracionSerializer(valoraciones, many=True)
-        return Response(serializer.data)
+        if receta_id:
+            valoraciones = Valoracion.objects.filter(receta_id=receta_id).select_related('user')
+            return Response(ValoracionSerializer(valoraciones, many=True).data)
+        valoraciones = Valoracion.objects.filter(user=request.user).select_related('receta')
+        return Response(MiValoracionSerializer(valoraciones, many=True).data)
 
     def post(self, request):
         receta_id = request.data.get('receta_id')

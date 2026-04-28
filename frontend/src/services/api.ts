@@ -100,13 +100,34 @@ export const getMiPerfil = async () => {
   return res.json();
 };
 
-export const updatePerfil = async (data: { preferencias?: string; alergias?: string }) => {
-  const headers = await authHeaders();
+export const updatePerfil = async (
+  data: { preferencias?: string; alergias?: string; username?: string; email?: string },
+  foto?: { uri: string; type: string; name: string }
+) => {
+  const token = await getToken();
+  if (foto) {
+    const formData = new FormData();
+    Object.entries(data).forEach(([k, v]) => { if (v !== undefined) formData.append(k, v as string); });
+    formData.append('foto', foto as any);
+    const res = await fetch(`${BASE_URL}/auth/perfil/`, {
+      method: 'PUT',
+      headers: { Authorization: `Token ${token}` },
+      body: formData,
+    });
+    return res.json();
+  }
+  const headers = { 'Content-Type': 'application/json', Authorization: `Token ${token}` };
   const res = await fetch(`${BASE_URL}/auth/perfil/`, {
     method: 'PUT',
     headers,
     body: JSON.stringify(data),
   });
+  return res.json();
+};
+
+export const getMisValoraciones = async () => {
+  const headers = await authHeaders();
+  const res = await fetch(`${BASE_URL}/valoraciones/`, { headers });
   return res.json();
 };
 
