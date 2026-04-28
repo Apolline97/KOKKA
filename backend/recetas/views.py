@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate
 from django.db.models import Q
 from .models import Perfil, Receta, PasoReceta, Ingrediente, RecetaIngrediente, PlanComida, Favorito
 from .serializers import (
-    PerfilSerializer, RecetaSerializer, PasoRecetaSerializer,
+    PerfilSerializer, RecetaSerializer, RecetaListSerializer, PasoRecetaSerializer,
     IngredienteSerializer, RecetaIngredienteSerializer, PlanComidaSerializer, FavoritoSerializer
 )
 
@@ -62,8 +62,12 @@ class LoginView(APIView):
 
 class RecetaViewSet(viewsets.ModelViewSet):
     """CRUD completo para recetas. Soporta ?search= y ?categoria="""
-    serializer_class = RecetaSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'recomendadas', 'mis_recetas'):
+            return RecetaListSerializer
+        return RecetaSerializer
 
     def get_queryset(self):
         queryset = Receta.objects.prefetch_related(

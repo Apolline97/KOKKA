@@ -40,6 +40,21 @@ class RecetaIngredienteSerializer(serializers.ModelSerializer):
         fields = ['id', 'ingrediente', 'ingrediente_id', 'cantidad']
 
 
+class RecetaListSerializer(serializers.ModelSerializer):
+    imagen_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Receta
+        fields = ['id', 'titulo', 'tiempo_prep', 'calorias', 'categoria', 'imagen_url']
+
+    def get_imagen_url(self, obj):
+        if obj.imagen:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.imagen.url)
+        return obj.imagen_url
+
+
 class RecetaSerializer(serializers.ModelSerializer):
     ingredientes = RecetaIngredienteSerializer(
         source='recetaingrediente_set', many=True, read_only=True
