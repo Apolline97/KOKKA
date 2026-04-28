@@ -185,6 +185,9 @@ class Command(BaseCommand):
         # Borrar también las de kokka_admin (recetas de prueba)
         Receta.objects.filter(creador__username='kokka_admin').delete()
 
+        # Borrar ingredientes huérfanos para que se recreen con las unidades correctas
+        Ingrediente.objects.filter(recetaingrediente__isnull=True).delete()
+
         categorias_api = list(CATEGORIA_MAP.keys())
         ids_vistos = set()
         total = 0
@@ -258,7 +261,7 @@ class Command(BaseCommand):
                         nombre=nombre_es,
                         defaults={'unidad_medida': unidad}
                     )
-                    if not creado and ingrediente.unidad_medida == 'al gusto' and unidad != 'al gusto':
+                    if not creado and unidad != 'al gusto':
                         ingrediente.unidad_medida = unidad
                         ingrediente.save()
 
