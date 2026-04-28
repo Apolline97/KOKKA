@@ -14,6 +14,7 @@ import DetalleRecetaScreen from './src/screens/DetalleRecetaScreen';
 import PerfilScreen from './src/screens/PerfilScreen';
 import PlanificadorScreen from './src/screens/PlanificadorScreen';
 import CrearRecetaScreen from './src/screens/CrearRecetaScreen';
+import EditarRecetaScreen from './src/screens/EditarRecetaScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -95,6 +96,7 @@ function MainStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Tabs" component={TabsNavigator} />
       <Stack.Screen name="DetalleReceta" component={DetalleRecetaScreen} />
+      <Stack.Screen name="EditarReceta" component={EditarRecetaScreen} />
     </Stack.Navigator>
   );
 }

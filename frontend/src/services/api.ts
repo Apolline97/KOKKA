@@ -153,3 +153,39 @@ export const crearPlan = async (receta_id: number, fecha: string, tipo_comida: s
   });
   return res.json();
 };
+
+export const deletePlan = async (id: number) => {
+  const headers = await authHeaders();
+  await fetch(`${BASE_URL}/planes/${id}/`, { method: 'DELETE', headers });
+};
+
+export const editarReceta = async (
+  id: number,
+  data: {
+    titulo: string;
+    descripcion: string;
+    tiempo_prep: number;
+    calorias: number;
+    categoria: string;
+    pasos_nuevos: { numero: number; descripcion: string }[];
+  },
+  imagen?: { uri: string; type: string; name: string }
+) => {
+  const token = await getToken();
+  const formData = new FormData();
+  formData.append('titulo', data.titulo);
+  formData.append('descripcion', data.descripcion);
+  formData.append('tiempo_prep', String(data.tiempo_prep));
+  formData.append('calorias', String(data.calorias));
+  formData.append('categoria', data.categoria);
+  formData.append('pasos_nuevos', JSON.stringify(data.pasos_nuevos));
+  if (imagen) {
+    formData.append('imagen', imagen as any);
+  }
+  const res = await fetch(`${BASE_URL}/recetas/${id}/`, {
+    method: 'PATCH',
+    headers: { Authorization: `Token ${token}` },
+    body: formData,
+  });
+  return res.json();
+};

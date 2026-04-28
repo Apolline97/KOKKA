@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   FlatList, ActivityIndicator, Image, Modal, Dimensions,
@@ -54,7 +54,6 @@ export default function RecetasScreen({ navigation }: any) {
   };
 
   useFocusEffect(useCallback(() => { cargar(); }, [categoria]));
-  useEffect(() => { cargar(); }, [categoria]);
 
   const toggleFavorito = async (receta: any) => {
     if (favoritosIds.has(receta.id)) {

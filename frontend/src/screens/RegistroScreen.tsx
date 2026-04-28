@@ -28,7 +28,8 @@ export default function RegistroScreen({ navigation }: any) {
 
     if (data.token) {
       await AsyncStorage.setItem('token', data.token);
-      navigation.replace('Recetas');
+      await AsyncStorage.setItem('user_id', String(data.user_id));
+      navigation.replace('Main');
     } else {
       Alert.alert('Error', data.error || 'No se pudo registrar');
     }

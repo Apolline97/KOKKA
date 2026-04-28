@@ -2,18 +2,24 @@ import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFavoritos, addFavorito, removeFavorito } from '../services/api';
 
 export default function DetalleRecetaScreen({ route, navigation }: any) {
   const { receta } = route.params;
   const [esFavorito, setEsFavorito] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
 
   useEffect(() => {
     const comprobar = async () => {
-      const data = await getFavoritos();
-      if (Array.isArray(data)) {
-        setEsFavorito(data.some((f: any) => f.receta.id === receta.id));
+      const [dataFavs, storedId] = await Promise.all([
+        getFavoritos(),
+        AsyncStorage.getItem('user_id'),
+      ]);
+      if (Array.isArray(dataFavs)) {
+        setEsFavorito(dataFavs.some((f: any) => f.receta.id === receta.id));
       }
+      if (storedId) setUserId(parseInt(storedId));
     };
     comprobar();
   }, []);
@@ -40,9 +46,19 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
       <View style={styles.cabecera}>
         <Text style={styles.titulo}>{receta.titulo}</Text>
-        <TouchableOpacity onPress={toggleFavorito} style={styles.corazon}>
-          <Text style={styles.corazonTexto}>{esFavorito ? '♥' : '♡'}</Text>
-        </TouchableOpacity>
+        <View style={styles.cabeceraAcciones}>
+          {receta.creador?.id === userId && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('EditarReceta', { receta })}
+              style={styles.botonEditar}
+            >
+              <Text style={styles.botonEditarTexto}>✏️ Editar</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={toggleFavorito} style={styles.corazon}>
+            <Text style={styles.corazonTexto}>{esFavorito ? '♥' : '♡'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.fila}>
@@ -88,6 +104,9 @@ const styles = StyleSheet.create({
   volverTexto: { color: '#e07a5f', fontSize: 16 },
   cabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10 },
   titulo: { fontSize: 24, fontWeight: 'bold', color: '#c1553a', flex: 1 },
+  cabeceraAcciones: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  botonEditar: { backgroundColor: '#fde3d5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  botonEditarTexto: { color: '#e07a5f', fontSize: 13, fontWeight: 'bold' },
   corazon: { padding: 8 },
   corazonTexto: { fontSize: 28, color: '#e07a5f' },
   fila: { flexDirection: 'row', gap: 8, marginBottom: 12, paddingHorizontal: 16 },
