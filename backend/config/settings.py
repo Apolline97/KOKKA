@@ -13,13 +13,7 @@ SECRET_KEY = os.environ.get(
 # En Railway pondremos DEBUG=False. En local es True.
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['192.168.1.34', 'localhost', '127.0.0.1']
-
-# Render inyecta RENDER_EXTERNAL_HOSTNAME automáticamente
-for _host_var in ['RENDER_EXTERNAL_HOSTNAME', 'RAILWAY_PUBLIC_DOMAIN']:
-    _host = os.environ.get(_host_var, '')
-    if _host:
-        ALLOWED_HOSTS.append(_host)
+ALLOWED_HOSTS = ['192.168.1.34', 'localhost', '127.0.0.1', 'kokka.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
