@@ -23,15 +23,19 @@ export default function RegistroScreen({ navigation }: any) {
       return;
     }
     setCargando(true);
-    const data = await registro(username, email, password);
-    setCargando(false);
-
-    if (data.token) {
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('user_id', String(data.user_id));
-      navigation.replace('Main');
-    } else {
-      Alert.alert('Error', data.error || 'No se pudo registrar');
+    try {
+      const data = await registro(username, email, password);
+      if (data.token) {
+        await AsyncStorage.setItem('token', data.token);
+        await AsyncStorage.setItem('user_id', String(data.user_id));
+        navigation.replace('Main');
+      } else {
+        Alert.alert('Error', data.error || 'No se pudo registrar');
+      }
+    } catch (_) {
+      Alert.alert('Error', 'No se pudo conectar al servidor. Inténtalo de nuevo.');
+    } finally {
+      setCargando(false);
     }
   };
 
