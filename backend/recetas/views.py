@@ -90,7 +90,37 @@ class RecetaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='recomendadas')
     def recomendadas(self, request):
-        recetas = Receta.objects.filter(tiempo_prep__lt=30, calorias__lt=600)
+        import random
+        try:
+            perfil = Perfil.objects.get(user=request.user)
+        except Perfil.DoesNotExist:
+            perfil = None
+
+        qs = Receta.objects.prefetch_related('valoracion_set').select_related('creador')
+
+        if perfil and perfil.onboarding_completado:
+            if perfil.tiempo_cocina == 'rapido':
+                qs = qs.filter(tiempo_prep__lte=20)
+            elif perfil.tiempo_cocina == 'medio':
+                qs = qs.filter(tiempo_prep__lte=45)
+
+            if perfil.categoria_favorita:
+                qs = qs.filter(categoria=perfil.categoria_favorita)
+
+            if perfil.objetivo_calorias == 'ligero':
+                qs = qs.filter(calorias__lte=400)
+            elif perfil.objetivo_calorias == 'equilibrado':
+                qs = qs.filter(calorias__lte=600)
+        else:
+            qs = qs.filter(tiempo_prep__lt=30, calorias__lt=600)
+
+        ids = list(qs.values_list('id', flat=True))
+        if len(ids) < 6:
+            ids = list(Receta.objects.values_list('id', flat=True))
+        if len(ids) > 12:
+            ids = random.sample(ids, 12)
+
+        recetas = Receta.objects.prefetch_related('valoracion_set').filter(id__in=ids)
         serializer = self.get_serializer(recetas, many=True)
         return Response(serializer.data)
 

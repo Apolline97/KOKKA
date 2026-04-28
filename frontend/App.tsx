@@ -15,6 +15,7 @@ import PerfilScreen from './src/screens/PerfilScreen';
 import PlanificadorScreen from './src/screens/PlanificadorScreen';
 import CrearRecetaScreen from './src/screens/CrearRecetaScreen';
 import EditarRecetaScreen from './src/screens/EditarRecetaScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -131,6 +132,7 @@ export default function App() {
         >
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Registro" component={RegistroScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Main" component={MainStack} />
         </Stack.Navigator>
       </NavigationContainer>

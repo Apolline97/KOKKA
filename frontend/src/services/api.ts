@@ -129,6 +129,20 @@ export const updatePerfil = async (
   return res.json();
 };
 
+export const guardarOnboarding = async (data: {
+  tiempo_cocina: string;
+  categoria_favorita: string;
+  objetivo_calorias: string;
+}) => {
+  const token = await getToken();
+  const res = await fetch(`${BASE_URL}/auth/perfil/`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Token ${token}` },
+    body: JSON.stringify({ ...data, onboarding_completado: true }),
+  });
+  return res.json();
+};
+
 export const getMisValoraciones = async () => {
   const headers = await authHeaders();
   const res = await fetch(`${BASE_URL}/valoraciones/`, { headers });

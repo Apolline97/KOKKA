@@ -17,7 +17,10 @@ class PerfilSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Perfil
-        fields = ['id', 'user', 'preferencias', 'alergias', 'foto', 'foto_url']
+        fields = [
+            'id', 'user', 'preferencias', 'alergias', 'foto', 'foto_url',
+            'tiempo_cocina', 'categoria_favorita', 'objetivo_calorias', 'onboarding_completado',
+        ]
 
     def get_foto_url(self, obj):
         if obj.foto:

@@ -7,6 +7,10 @@ class Perfil(models.Model):
     preferencias = models.TextField(blank=True, null=True, help_text="Ej: Vegano, sin gluten")
     alergias = models.TextField(blank=True, null=True)
     foto = models.ImageField(upload_to='perfiles/', blank=True, null=True)
+    tiempo_cocina = models.CharField(max_length=20, blank=True, default='')
+    categoria_favorita = models.CharField(max_length=20, blank=True, default='')
+    objetivo_calorias = models.CharField(max_length=20, blank=True, default='')
+    onboarding_completado = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
