@@ -36,22 +36,22 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const [recetaCompleta, dataFavs, storedId, vals] = await Promise.all([
+        const [recetaCompleta, dataFavs, storedId, storedUsername, vals] = await Promise.all([
           getReceta(recetaBase.id),
           getFavoritos(),
           AsyncStorage.getItem('user_id'),
+          AsyncStorage.getItem('username'),
           getValoraciones(recetaBase.id),
         ]);
         if (recetaCompleta?.id) setReceta(recetaCompleta);
         if (Array.isArray(dataFavs)) {
           setEsFavorito(dataFavs.some((f: any) => f.receta.id === recetaBase.id));
         }
-        if (storedId) {
-          const uid = parseInt(storedId);
-          setUserId(uid);
-          if (Array.isArray(vals)) {
-            setValoraciones(vals);
-            const mia = vals.find((v: any) => v.username === null);
+        if (storedId) setUserId(parseInt(storedId));
+        if (Array.isArray(vals)) {
+          setValoraciones(vals);
+          if (storedUsername) {
+            const mia = vals.find((v: any) => v.username === storedUsername);
             if (mia) {
               setMiPuntuacion(mia.puntuacion);
               setMiComentario(mia.comentario);

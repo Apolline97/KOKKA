@@ -212,7 +212,22 @@ def obtener_detalle(meal_id):
 class Command(BaseCommand):
     help = 'Importa recetas desde TheMealDB y las traduce al español'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--force', action='store_true', help='Reimportar aunque ya existan recetas')
+
     def handle(self, *args, **kwargs):
+        forzar = kwargs.get('force', False)
+
+        # Saltar si ya hay suficientes recetas con ingredientes (protección anti-borrado accidental)
+        recetas_completas = RecetaIngrediente.objects.filter(
+            receta__creador__isnull=True
+        ).values('receta').distinct().count()
+
+        if recetas_completas >= 50 and not forzar:
+            self.stdout.write(f'BD ya tiene {recetas_completas} recetas con ingredientes. Saltando importación.')
+            self.stdout.write('Usa --force para reimportar de todas formas.')
+            return
+
         # Borrar recetas importadas previamente (sin creador) para evitar duplicados
         eliminadas = Receta.objects.filter(creador__isnull=True).count()
         Receta.objects.filter(creador__isnull=True).delete()
