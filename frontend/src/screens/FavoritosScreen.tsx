@@ -49,7 +49,7 @@ export default function FavoritosScreen({ navigation }: any) {
               <View style={styles.tarjetaTexto}>
                 <Text style={styles.tarjetaTitulo}>{item.receta.titulo}</Text>
                 <Text style={styles.tarjetaInfo}>
-                  {item.receta.categoria} · {item.receta.tiempo_prep} min · {item.receta.calorias} kcal
+                  {item.receta.categoria} · {item.receta.tiempo_prep} min · {item.receta.calorias} kcal · ★ {item.receta.media_valoracion ?? '–'}
                 </Text>
                 <TouchableOpacity onPress={() => quitar(item.receta.id)}>
                   <Text style={styles.quitar}>♥ Quitar de favoritos</Text>

@@ -110,7 +110,10 @@ export default function ExplorarScreen({ navigation }: any) {
           </Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.tarjetaTitulo} numberOfLines={2}>{receta.titulo}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.tarjetaTitulo} numberOfLines={2}>{receta.titulo}</Text>
+        <Text style={styles.ratingBadge}>★ {receta.media_valoracion ?? '–'}</Text>
+      </View>
       <View style={styles.tagsRow}>
         <View style={styles.tiempoTag}>
           <Text style={styles.tiempoTagTexto}>{'<'}{receta.tiempo_prep}min</Text>
@@ -256,7 +259,9 @@ const styles = StyleSheet.create({
   },
   corazonTexto: { fontSize: 16, color: '#ccc' },
   corazonActivo: { color: '#e63946' },
-  tarjetaTitulo: { fontSize: 13, fontWeight: 'bold', color: '#333', paddingHorizontal: 10, paddingTop: 8, marginBottom: 6 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 10, paddingTop: 8, marginBottom: 4 },
+  tarjetaTitulo: { fontSize: 13, fontWeight: 'bold', color: '#333', flex: 1, marginRight: 4 },
+  ratingBadge: { fontSize: 11, color: '#f4b942', fontWeight: 'bold', marginTop: 1 },
   tagsRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingBottom: 10, gap: 6 },
   tiempoTag: { backgroundColor: '#4caf50', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
   tiempoTagTexto: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
