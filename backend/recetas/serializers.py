@@ -99,6 +99,7 @@ class RecetaSerializer(serializers.ModelSerializer):
     pasos = PasoRecetaSerializer(many=True, read_only=True)
     creador = UserSerializer(read_only=True)
     pasos_nuevos = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    ingredientes_nuevos = serializers.CharField(write_only=True, required=False, allow_blank=True)
     imagen = serializers.ImageField(write_only=True, required=False)
     imagen_url = serializers.SerializerMethodField()
     media_valoracion = serializers.SerializerMethodField()
@@ -108,7 +109,7 @@ class RecetaSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'titulo', 'descripcion', 'tiempo_prep',
             'calorias', 'categoria', 'imagen_url', 'imagen', 'fecha_creacion',
-            'creador', 'ingredientes', 'pasos', 'pasos_nuevos', 'media_valoracion'
+            'creador', 'ingredientes', 'pasos', 'pasos_nuevos', 'ingredientes_nuevos', 'media_valoracion'
         ]
 
     def get_media_valoracion(self, obj):
@@ -126,11 +127,18 @@ class RecetaSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         import json
         pasos_raw = validated_data.pop('pasos_nuevos', '[]')
+        ingredientes_raw = validated_data.pop('ingredientes_nuevos', '[]')
         try:
             pasos_data = json.loads(pasos_raw) if isinstance(pasos_raw, str) else pasos_raw
         except (json.JSONDecodeError, TypeError):
             pasos_data = []
+        try:
+            ingredientes_data = json.loads(ingredientes_raw) if isinstance(ingredientes_raw, str) else ingredientes_raw
+        except (json.JSONDecodeError, TypeError):
+            ingredientes_data = []
+
         receta = Receta.objects.create(**validated_data)
+
         for paso in pasos_data:
             if paso.get('descripcion'):
                 PasoReceta.objects.create(
@@ -138,6 +146,24 @@ class RecetaSerializer(serializers.ModelSerializer):
                     numero=paso.get('numero', 1),
                     descripcion=paso['descripcion']
                 )
+
+        for ing in ingredientes_data:
+            nombre = ing.get('nombre', '').strip()
+            if not nombre:
+                continue
+            unidad = ing.get('unidad', '').strip()
+            cantidad = min(float(ing.get('cantidad', 1) or 1), 9999.99)
+            ingrediente, _ = Ingrediente.objects.get_or_create(
+                nombre=nombre,
+                defaults={'unidad_medida': unidad}
+            )
+            RecetaIngrediente.objects.create(
+                receta=receta,
+                ingrediente=ingrediente,
+                cantidad=cantidad,
+                unidad_medida=unidad
+            )
+
         return receta
 
     def update(self, instance, validated_data):

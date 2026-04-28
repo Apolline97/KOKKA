@@ -71,6 +71,7 @@ export const crearReceta = async (
     calorias: number;
     categoria: string;
     pasos_nuevos: { numero: number; descripcion: string }[];
+    ingredientes_nuevos?: { nombre: string; cantidad: number; unidad: string }[];
   },
   imagen?: { uri: string; type: string; name: string }
 ) => {
@@ -82,6 +83,9 @@ export const crearReceta = async (
   formData.append('calorias', String(data.calorias));
   formData.append('categoria', data.categoria);
   formData.append('pasos_nuevos', JSON.stringify(data.pasos_nuevos));
+  if (data.ingredientes_nuevos) {
+    formData.append('ingredientes_nuevos', JSON.stringify(data.ingredientes_nuevos));
+  }
   if (imagen) {
     formData.append('imagen', imagen as any);
   }

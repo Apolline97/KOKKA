@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login } from '../services/api';
@@ -39,7 +42,8 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.titulo}>KOKKA</Text>
       <Text style={styles.subtitulo}>Inicia sesión</Text>
 
@@ -71,7 +75,8 @@ export default function LoginScreen({ navigation }: any) {
       <TouchableOpacity onPress={() => navigation.navigate('Registro')}>
         <Text style={styles.enlace}>¿No tienes cuenta? Regístrate</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

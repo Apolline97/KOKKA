@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert, Image,
+  ScrollView, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { crearReceta } from '../services/api';
@@ -15,20 +15,21 @@ export default function CrearRecetaScreen({ navigation }: any) {
   const [calorias, setCalorias] = useState('');
   const [categoria, setCategoria] = useState('Almuerzo');
   const [pasos, setPasos] = useState(['']);
+  const [ingredientes, setIngredientes] = useState([{ nombre: '', cantidad: '', unidad: '' }]);
   const [imagen, setImagen] = useState<{ uri: string; type: string; name: string } | null>(null);
   const [guardando, setGuardando] = useState(false);
 
   const añadirPaso = () => setPasos([...pasos, '']);
-
   const editarPaso = (texto: string, index: number) => {
-    const nuevos = [...pasos];
-    nuevos[index] = texto;
-    setPasos(nuevos);
+    const nuevos = [...pasos]; nuevos[index] = texto; setPasos(nuevos);
   };
+  const eliminarPaso = (index: number) => setPasos(pasos.filter((_, i) => i !== index));
 
-  const eliminarPaso = (index: number) => {
-    setPasos(pasos.filter((_, i) => i !== index));
+  const añadirIngrediente = () => setIngredientes([...ingredientes, { nombre: '', cantidad: '', unidad: '' }]);
+  const editarIngrediente = (index: number, campo: string, valor: string) => {
+    const nuevos = [...ingredientes]; nuevos[index] = { ...nuevos[index], [campo]: valor }; setIngredientes(nuevos);
   };
+  const eliminarIngrediente = (index: number) => setIngredientes(ingredientes.filter((_, i) => i !== index));
 
   const seleccionarImagen = () => {
     launchImageLibrary(
@@ -57,6 +58,14 @@ export default function CrearRecetaScreen({ navigation }: any) {
       .map((p, i) => ({ numero: i + 1, descripcion: p.trim() }))
       .filter(p => p.descripcion.length > 0);
 
+    const ingsValidos = ingredientes
+      .filter(ing => ing.nombre.trim().length > 0)
+      .map(ing => ({
+        nombre: ing.nombre.trim(),
+        cantidad: parseFloat(ing.cantidad) || 1,
+        unidad: ing.unidad.trim(),
+      }));
+
     setGuardando(true);
     const data = await crearReceta(
       {
@@ -66,6 +75,7 @@ export default function CrearRecetaScreen({ navigation }: any) {
         calorias: parseInt(calorias),
         categoria,
         pasos_nuevos: pasosValidos,
+        ingredientes_nuevos: ingsValidos,
       },
       imagen || undefined
     );
@@ -81,7 +91,11 @@ export default function CrearRecetaScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <TouchableOpacity style={styles.volver} onPress={() => navigation.goBack()}>
         <Text style={styles.volverTexto}>← Volver</Text>
       </TouchableOpacity>
@@ -165,6 +179,42 @@ export default function CrearRecetaScreen({ navigation }: any) {
         ))}
       </View>
 
+      <Text style={styles.label}>Ingredientes</Text>
+      {ingredientes.map((ing, index) => (
+        <View key={index} style={styles.ingredienteFila}>
+          <TextInput
+            style={[styles.input, styles.ingNombre]}
+            placeholder="Ingrediente"
+            placeholderTextColor="#aaa"
+            value={ing.nombre}
+            onChangeText={v => editarIngrediente(index, 'nombre', v)}
+          />
+          <TextInput
+            style={[styles.input, styles.ingCantidad]}
+            placeholder="Cant."
+            placeholderTextColor="#aaa"
+            value={ing.cantidad}
+            onChangeText={v => editarIngrediente(index, 'cantidad', v)}
+            keyboardType="decimal-pad"
+          />
+          <TextInput
+            style={[styles.input, styles.ingUnidad]}
+            placeholder="g / ml..."
+            placeholderTextColor="#aaa"
+            value={ing.unidad}
+            onChangeText={v => editarIngrediente(index, 'unidad', v)}
+          />
+          {ingredientes.length > 1 && (
+            <TouchableOpacity style={styles.eliminarPaso} onPress={() => eliminarIngrediente(index)}>
+              <Text style={styles.eliminarPasoTexto}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+      <TouchableOpacity style={styles.botonAñadir} onPress={añadirIngrediente}>
+        <Text style={styles.botonAñadirTexto}>+ Añadir ingrediente</Text>
+      </TouchableOpacity>
+
       <Text style={styles.label}>Pasos de elaboración</Text>
       {pasos.map((paso, index) => (
         <View key={index} style={styles.pasoFila}>
@@ -199,6 +249,7 @@ export default function CrearRecetaScreen({ navigation }: any) {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -236,6 +287,10 @@ const styles = StyleSheet.create({
   categoriaBtnActivo: { backgroundColor: '#e07a5f' },
   categoriaBtnTexto: { color: '#e07a5f', fontSize: 13 },
   categoriaBtnTextoActivo: { color: '#fff' },
+  ingredienteFila: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 },
+  ingNombre: { flex: 3, marginBottom: 0 },
+  ingCantidad: { flex: 1.2, marginBottom: 0 },
+  ingUnidad: { flex: 1.5, marginBottom: 0 },
   pasoFila: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10, gap: 8 },
   pasoNumero: {
     width: 28, height: 28, borderRadius: 14,

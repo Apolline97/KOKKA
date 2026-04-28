@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registro } from '../services/api';
@@ -40,7 +43,8 @@ export default function RegistroScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.titulo}>KOKKA</Text>
       <Text style={styles.subtitulo}>Crear cuenta</Text>
 
@@ -81,7 +85,8 @@ export default function RegistroScreen({ navigation }: any) {
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.enlace}>¿Ya tienes cuenta? Inicia sesión</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
