@@ -55,8 +55,8 @@ UNIDADES_MAP = {
     'lb': 'libra', 'lbs': 'libras', 'pound': 'libra', 'pounds': 'libras',
     # volumen
     'ml': 'ml', 'milliliter': 'ml', 'milliliters': 'ml', 'millilitre': 'ml',
-    'l': 'l', 'liter': 'l', 'liters': 'l', 'litre': 'l',
-    'fl oz': 'fl oz',
+    'l': 'litro', 'liter': 'litro', 'liters': 'litros', 'litre': 'litro', 'litres': 'litros',
+    'fl oz': 'fl oz', 'pint': 'pinta', 'pints': 'pintas',
     # pequeñas cantidades
     'pinch': 'pizca', 'pinches': 'pizcas',
     'dash': 'chorrito', 'splash': 'chorrito', 'drizzle': 'chorrito',
@@ -66,6 +66,7 @@ UNIDADES_MAP = {
     'can': 'lata', 'cans': 'latas',
     'tin': 'lata', 'tins': 'latas',
     'packet': 'paquete', 'packets': 'paquetes',
+    'sachet': 'sobre', 'sachets': 'sobres',
     'bag': 'bolsa', 'bags': 'bolsas',
     'jar': 'tarro', 'jars': 'tarros',
     'bottle': 'botella', 'bottles': 'botellas',
@@ -82,35 +83,56 @@ UNIDADES_MAP = {
     'strip': 'tira', 'strips': 'tiras',
     'block': 'bloque', 'stick': 'barra', 'sticks': 'barras',
     'sheet': 'hoja', 'sheets': 'hojas',
-    # tamaños
-    'large': 'grande', 'medium': 'mediano', 'small': 'pequeño',
-    # preparación (cuando aparecen como unidad)
-    'minced': 'picado', 'chopped': 'picado', 'diced': 'en dados',
-    'grated': 'rallado', 'sliced': 'en lonchas', 'crushed': 'machacado',
-    'separated': 'separado', 'beaten': 'batido', 'softened': 'ablandado',
-    'melted': 'derretido', 'cooked': 'cocido', 'coarsely': 'grueso',
-    'finely': 'fino', 'freshly': 'recién', 'ground': 'molido',
-    'halved': 'partido', 'quartered': 'en cuartos', 'whole': 'entero',
-    'frozen': 'congelado', 'fresh': 'fresco', 'dried': 'seco',
-    # para servir
+    'loaf': 'barra', 'loaves': 'barras',
+    'cube': 'pastilla', 'cubes': 'pastillas',
+    'wrapper': 'envoltura', 'wrappers': 'envolturas',
+    'roll': 'rollo', 'rolls': 'rollos',
+    'portion': 'porción', 'portions': 'porciones',
+    'drop': 'gota', 'drops': 'gotas',
+    # para servir / al gusto
     'to serve': 'para servir', 'to taste': 'al gusto',
     'as needed': 'al gusto', 'as required': 'al gusto',
     'optional': 'opcional', 'for garnish': 'para decorar',
     'for frying': 'para freír', 'for greasing': 'para engrasar',
+    'for dusting': 'para espolvorear',
 }
+
+# Palabras que son solo métodos de preparación → no son unidades, se omiten
+METODOS_PREP = {
+    'minced', 'chopped', 'diced', 'sliced', 'grated', 'crushed', 'separated',
+    'beaten', 'softened', 'melted', 'cooked', 'ground', 'halved', 'quartered',
+    'shredded', 'julienned', 'torn', 'peeled', 'seeded', 'deseeded', 'trimmed',
+    'finely chopped', 'roughly chopped', 'coarsely chopped', 'finely', 'roughly',
+    'coarsely', 'freshly', 'freshly ground', 'lightly', 'well', 'thinly',
+    'thinly sliced', 'finely sliced', 'roughly chopped', 'coarsely grated',
+    'frozen', 'fresh', 'dried', 'whole', 'raw', 'uncooked',
+}
+
+# Palabras que son solo tamaños → se omiten como unidad
+SOLO_TAMANO = {'large', 'medium', 'small', 'extra large', 'extra-large'}
 
 
 def traducir_unidad(unidad_en):
     if not unidad_en:
-        return 'al gusto'
+        return ''
     lower = unidad_en.lower().strip()
+
+    # Frases especiales multi-palabra (coincidencia exacta primero)
     if lower in UNIDADES_MAP:
         return UNIDADES_MAP[lower]
-    # buscar coincidencia parcial por palabra clave
-    for clave, valor in UNIDADES_MAP.items():
-        if clave in lower:
-            return valor
-    return unidad_en  # dejar en inglés si no se encuentra
+
+    # Si es solo un método de preparación o tamaño → sin unidad
+    if lower in METODOS_PREP or lower in SOLO_TAMANO:
+        return ''
+
+    # Buscar la primera palabra que sea una unidad real
+    palabras = lower.split()
+    for palabra in palabras:
+        if palabra in UNIDADES_MAP:
+            return UNIDADES_MAP[palabra]
+
+    # Si ninguna palabra es unidad conocida, devolver vacío
+    return ''
 
 
 PASO_CABECERA = re.compile(
@@ -134,6 +156,8 @@ def parsear_medida(cantidad_str):
     s = cantidad_str.strip()
     if not s or s.lower() in ('to taste', 'as needed', 'al gusto'):
         return 1.0, 'al gusto'
+    if s.lower() in ('to serve',):
+        return 1.0, 'para servir'
 
     # Fracciones como "1/2" o "1 1/2"
     fraccion = re.match(r'^(\d+)\s+(\d+)/(\d+)', s)

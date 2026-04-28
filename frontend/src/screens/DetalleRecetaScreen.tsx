@@ -88,11 +88,17 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
       <Text style={styles.seccion}>Ingredientes</Text>
       {receta.ingredientes && receta.ingredientes.length > 0 ? (
-        receta.ingredientes.map((ri: any) => (
-          <Text key={ri.id} style={styles.item}>
-            • {parseFloat(ri.cantidad) % 1 === 0 ? parseInt(ri.cantidad) : parseFloat(ri.cantidad)} {ri.ingrediente.unidad_medida !== 'al gusto' ? ri.ingrediente.unidad_medida : ''} de {ri.ingrediente.nombre}
-          </Text>
-        ))
+        receta.ingredientes.map((ri: any) => {
+          const cant = parseFloat(ri.cantidad);
+          const cantStr = cant % 1 === 0 ? String(Math.round(cant)) : String(Math.round(cant * 100) / 100);
+          const unidad = ri.ingrediente.unidad_medida;
+          const nombre = ri.ingrediente.nombre;
+          const sinUnidad = !unidad || unidad === 'al gusto' || unidad === 'para servir' || unidad === 'opcional';
+          const linea = sinUnidad
+            ? `• ${cantStr} de ${nombre}${unidad && unidad !== 'al gusto' ? ` (${unidad})` : ''}`
+            : `• ${cantStr} ${unidad} de ${nombre}`;
+          return <Text key={ri.id} style={styles.item}>{linea}</Text>;
+        })
       ) : (
         <Text style={styles.vacio}>Sin ingredientes</Text>
       )}
