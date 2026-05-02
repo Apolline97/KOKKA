@@ -87,7 +87,11 @@ export default function PerfilScreen({ navigation }: any) {
 
       {/* ── Header ── */}
       <View style={styles.headerBg}>
-        <TouchableOpacity style={styles.avatarWrapper} onPress={seleccionarFoto} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.avatarWrapper}
+          onPress={editando ? seleccionarFoto : undefined}
+          activeOpacity={editando ? 0.85 : 1}
+        >
           {fotoUri ? (
             <Image source={{ uri: fotoUri }} style={styles.avatar} />
           ) : (
@@ -95,9 +99,11 @@ export default function PerfilScreen({ navigation }: any) {
               <Text style={styles.avatarLetra}>{inicialNombre}</Text>
             </View>
           )}
-          <View style={styles.camaraOverlay}>
-            <Text style={styles.camaraIcono}>📷</Text>
-          </View>
+          {editando && (
+            <View style={styles.camaraOverlay}>
+              <Text style={styles.camaraIcono}>📷</Text>
+            </View>
+          )}
         </TouchableOpacity>
         <Text style={styles.headerNombre}>{perfil?.user?.username}</Text>
         <Text style={styles.headerEmail}>{perfil?.user?.email}</Text>

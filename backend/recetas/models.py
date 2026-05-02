@@ -81,6 +81,9 @@ class PlanComida(models.Model):
     fecha = models.DateField()
     tipo_comida = models.CharField(max_length=20, choices=TIPOS_COMIDA)
 
+    class Meta:
+        unique_together = ('user', 'fecha', 'tipo_comida')
+
     def __str__(self):
         return f"{self.tipo_comida} el {self.fecha} para {self.user.username}"
 

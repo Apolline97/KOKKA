@@ -190,7 +190,7 @@ class RecetaSerializer(serializers.ModelSerializer):
 
 
 class FavoritoSerializer(serializers.ModelSerializer):
-    receta = RecetaSerializer(read_only=True)
+    receta = RecetaListSerializer(read_only=True)
     receta_id = serializers.PrimaryKeyRelatedField(
         queryset=Receta.objects.all(), source='receta', write_only=True
     )
@@ -201,7 +201,7 @@ class FavoritoSerializer(serializers.ModelSerializer):
 
 
 class PlanComidaSerializer(serializers.ModelSerializer):
-    receta = RecetaSerializer(read_only=True)
+    receta = RecetaListSerializer(read_only=True)
     receta_id = serializers.PrimaryKeyRelatedField(
         queryset=Receta.objects.all(), source='receta', write_only=True
     )

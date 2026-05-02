@@ -164,8 +164,20 @@ class PlanComidaViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(fecha=fecha)
         return queryset
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        receta = serializer.validated_data['receta']
+        fecha = serializer.validated_data['fecha']
+        tipo_comida = serializer.validated_data['tipo_comida']
+        plan, created = PlanComida.objects.update_or_create(
+            user=request.user,
+            fecha=fecha,
+            tipo_comida=tipo_comida,
+            defaults={'receta': receta},
+        )
+        out = PlanComidaSerializer(plan, context={'request': request})
+        return Response(out.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class PerfilViewSet(viewsets.ModelViewSet):
@@ -181,7 +193,7 @@ class FavoritosView(APIView):
 
     def get(self, request):
         favoritos = Favorito.objects.filter(user=request.user)
-        serializer = FavoritoSerializer(favoritos, many=True)
+        serializer = FavoritoSerializer(favoritos, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
@@ -255,9 +267,12 @@ class ValoracionesView(APIView):
         except Receta.DoesNotExist:
             return Response({'error': 'Receta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
-        valoracion, _ = Valoracion.objects.update_or_create(
+        valoracion, created = Valoracion.objects.update_or_create(
             user=request.user,
             receta=receta,
             defaults={'puntuacion': int(puntuacion), 'comentario': comentario}
         )
-        return Response(ValoracionSerializer(valoracion).data, status=status.HTTP_201_CREATED)
+        return Response(
+            ValoracionSerializer(valoracion).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )

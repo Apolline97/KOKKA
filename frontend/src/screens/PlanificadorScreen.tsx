@@ -43,12 +43,9 @@ export default function PlanificadorScreen({ navigation }: any) {
 
   const cargarSemana = async () => {
     setCargando(true);
-    const todos: any[] = [];
-    for (let i = 0; i < 7; i++) {
-      const fecha = formatFecha(añadirDias(semanaBase, i));
-      const data = await getPlanes(fecha);
-      if (Array.isArray(data)) todos.push(...data);
-    }
+    const fechas = Array.from({ length: 7 }, (_, i) => formatFecha(añadirDias(semanaBase, i)));
+    const resultados = await Promise.all(fechas.map(f => getPlanes(f)));
+    const todos = resultados.flatMap(data => (Array.isArray(data) ? data : []));
     setPlanes(todos);
     setCargando(false);
   };
