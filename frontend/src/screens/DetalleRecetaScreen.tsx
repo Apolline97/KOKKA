@@ -4,7 +4,7 @@ import {
   ActivityIndicator, TextInput, Alert, Dimensions, Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getReceta, getFavoritos, addFavorito, removeFavorito, getValoraciones, crearValoracion } from '../services/api';
+import { getReceta, getFavoritos, addFavorito, removeFavorito, getValoraciones, crearValoracion, deleteReceta } from '../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -102,6 +102,23 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
     }
   };
 
+  const eliminarReceta = () => {
+    Alert.alert(
+      'Eliminar receta',
+      '¿Seguro que quieres eliminar esta receta? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar', style: 'destructive',
+          onPress: async () => {
+            await deleteReceta(receta.id);
+            navigation.goBack();
+          },
+        },
+      ]
+    );
+  };
+
   const toggleFavorito = async () => {
     if (esFavorito) {
       await removeFavorito(receta.id);
@@ -155,12 +172,17 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
                   <Text style={styles.mediaTexto}>★ {receta.media_valoracion}</Text>
                 ) : null}
                 {receta.creador?.id === userId && (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('EditarReceta', { receta })}
-                    style={styles.botonEditar}
-                  >
-                    <Text style={styles.botonEditarTexto}>✏️ Editar</Text>
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('EditarReceta', { receta })}
+                      style={styles.botonEditar}
+                    >
+                      <Text style={styles.botonEditarTexto}>✏️ Editar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={eliminarReceta} style={styles.botonEliminar}>
+                      <Text style={styles.botonEliminarTexto}>🗑️</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
                 <TouchableOpacity onPress={toggleFavorito} style={styles.corazon}>
                   <Text style={styles.corazonTexto}>{esFavorito ? '♥' : '♡'}</Text>
@@ -302,6 +324,8 @@ const styles = StyleSheet.create({
   mediaTexto: { fontSize: 14, color: '#f4b942', fontWeight: 'bold' },
   botonEditar: { backgroundColor: '#fde3d5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   botonEditarTexto: { color: '#e07a5f', fontSize: 13, fontWeight: 'bold' },
+  botonEliminar: { backgroundColor: '#fde3d5', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6 },
+  botonEliminarTexto: { fontSize: 15 },
   corazon: { padding: 8 },
   corazonTexto: { fontSize: 28, color: '#e07a5f' },
   fila: { flexDirection: 'row', gap: 8, marginBottom: 12, paddingHorizontal: 16 },

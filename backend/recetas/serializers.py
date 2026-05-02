@@ -80,7 +80,7 @@ class RecetaListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Receta
-        fields = ['id', 'titulo', 'tiempo_prep', 'calorias', 'categoria', 'imagen_url', 'media_valoracion']
+        fields = ['id', 'titulo', 'tiempo_prep', 'calorias', 'categoria', 'imagen_url', 'media_valoracion', 'estado']
 
     def get_imagen_url(self, obj):
         if obj.imagen:
@@ -112,7 +112,7 @@ class RecetaSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'titulo', 'descripcion', 'tiempo_prep',
             'calorias', 'categoria', 'imagen_url', 'imagen', 'fecha_creacion',
-            'creador', 'ingredientes', 'pasos', 'pasos_nuevos', 'ingredientes_nuevos', 'media_valoracion'
+            'creador', 'ingredientes', 'pasos', 'pasos_nuevos', 'ingredientes_nuevos', 'media_valoracion', 'estado'
         ]
 
     def get_media_valoracion(self, obj):

@@ -215,6 +215,16 @@ export const crearValoracion = async (receta_id: number, puntuacion: number, com
   return res.json();
 };
 
+export const deleteReceta = async (id: number) => {
+  const headers = await authHeaders();
+  await fetch(`${BASE_URL}/recetas/${id}/`, { method: 'DELETE', headers });
+};
+
+export const deleteAccount = async () => {
+  const headers = await authHeaders();
+  await fetch(`${BASE_URL}/auth/cuenta/`, { method: 'DELETE', headers });
+};
+
 export const editarReceta = async (
   id: number,
   data: {

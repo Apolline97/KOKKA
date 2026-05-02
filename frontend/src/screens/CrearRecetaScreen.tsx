@@ -82,9 +82,13 @@ export default function CrearRecetaScreen({ navigation }: any) {
     setGuardando(false);
 
     if (data.id) {
-      Alert.alert('¡Listo!', 'Receta creada correctamente', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      Alert.alert(
+        '¡Receta enviada!',
+        'Tu receta está pendiente de revisión. Se publicará automáticamente en 5 días si no es revisada antes.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    } else if (data.titulo) {
+      Alert.alert('Error', data.titulo[0] || 'No se pudo crear la receta');
     } else {
       Alert.alert('Error', 'No se pudo crear la receta');
     }

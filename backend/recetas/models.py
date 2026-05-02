@@ -24,6 +24,11 @@ class Receta(models.Model):
         ('Merienda', 'Merienda'),
         ('Postre', 'Postre'),
     ]
+    ESTADOS = [
+        ('pendiente', 'Pendiente'),
+        ('aprobada', 'Aprobada'),
+        ('rechazada', 'Rechazada'),
+    ]
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
     tiempo_prep = models.PositiveIntegerField(help_text="Tiempo en minutos")
@@ -33,6 +38,7 @@ class Receta(models.Model):
     imagen = models.ImageField(upload_to='recetas/', blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     creador = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recetas_creadas')
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='aprobada')
 
     def __str__(self):
         return self.titulo

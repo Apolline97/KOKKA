@@ -1,17 +1,26 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.db.models import Q
+from django.utils import timezone
+from datetime import timedelta
 from .models import Perfil, Receta, PasoReceta, Ingrediente, RecetaIngrediente, PlanComida, Favorito, Valoracion
 from .serializers import (
     PerfilSerializer, RecetaSerializer, RecetaListSerializer, PasoRecetaSerializer,
     IngredienteSerializer, RecetaIngredienteSerializer, PlanComidaSerializer, FavoritoSerializer,
     ValoracionSerializer, MiValoracionSerializer
 )
+
+
+def recetas_visibles_qs():
+    """Queryset base de recetas públicamente visibles: aprobadas o pendientes con más de 5 días."""
+    cinco_dias_atras = timezone.now() - timedelta(days=5)
+    return Q(estado='aprobada') | (Q(estado='pendiente') & Q(fecha_creacion__lte=cinco_dias_atras))
 
 
 class RegistroView(APIView):
@@ -31,6 +40,12 @@ class RegistroView(APIView):
         if User.objects.filter(username=username).exists():
             return Response(
                 {'error': 'Ese nombre de usuario ya existe'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if email and User.objects.filter(email=email).exists():
+            return Response(
+                {'error': 'Ese correo electrónico ya está registrado'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -73,7 +88,7 @@ class RecetaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Receta.objects.prefetch_related(
             'pasos', 'recetaingrediente_set__ingrediente', 'valoracion_set'
-        ).select_related('creador')
+        ).select_related('creador').filter(recetas_visibles_qs())
         categoria = self.request.query_params.get('categoria')
         search = self.request.query_params.get('search')
         if categoria:
@@ -86,7 +101,19 @@ class RecetaViewSet(viewsets.ModelViewSet):
         return queryset.order_by('titulo')
 
     def perform_create(self, serializer):
-        serializer.save(creador=self.request.user)
+        titulo = serializer.validated_data.get('titulo', '')
+        if Receta.objects.filter(creador=self.request.user, titulo__iexact=titulo).exists():
+            raise ValidationError({'titulo': 'Ya tienes una receta con ese nombre.'})
+        serializer.save(creador=self.request.user, estado='pendiente')
+
+    def destroy(self, request, *args, **kwargs):
+        receta = self.get_object()
+        if receta.creador != request.user:
+            return Response(
+                {'error': 'No tienes permiso para eliminar esta receta'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'], url_path='recomendadas')
     def recomendadas(self, request):
@@ -96,7 +123,9 @@ class RecetaViewSet(viewsets.ModelViewSet):
         except Perfil.DoesNotExist:
             perfil = None
 
-        qs = Receta.objects.prefetch_related('valoracion_set').select_related('creador')
+        qs = Receta.objects.prefetch_related('valoracion_set').select_related('creador').filter(
+            recetas_visibles_qs()
+        )
 
         if perfil and perfil.onboarding_completado:
             if perfil.tiempo_cocina == 'rapido':
@@ -116,7 +145,7 @@ class RecetaViewSet(viewsets.ModelViewSet):
 
         ids = list(qs.values_list('id', flat=True))
         if len(ids) < 6:
-            ids = list(Receta.objects.values_list('id', flat=True))
+            ids = list(Receta.objects.filter(recetas_visibles_qs()).values_list('id', flat=True))
         if len(ids) > 12:
             ids = random.sample(ids, 12)
 
@@ -126,7 +155,7 @@ class RecetaViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='mis-recetas')
     def mis_recetas(self, request):
-        recetas = Receta.objects.filter(creador=request.user)
+        recetas = Receta.objects.filter(creador=request.user).prefetch_related('valoracion_set')
         serializer = self.get_serializer(recetas, many=True)
         return Response(serializer.data)
 
@@ -230,7 +259,9 @@ class MiPerfilView(APIView):
             if User.objects.filter(username=username).exclude(pk=request.user.pk).exists():
                 return Response({'error': 'Ese nombre de usuario ya existe'}, status=status.HTTP_400_BAD_REQUEST)
             request.user.username = username
-        if email:
+        if email and email != request.user.email:
+            if User.objects.filter(email=email).exclude(pk=request.user.pk).exists():
+                return Response({'error': 'Ese correo electrónico ya está registrado'}, status=status.HTTP_400_BAD_REQUEST)
             request.user.email = email
         request.user.save()
 
@@ -240,6 +271,17 @@ class MiPerfilView(APIView):
             perfil.user.refresh_from_db()
             return Response(PerfilSerializer(perfil, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EliminarCuentaView(APIView):
+    """El usuario autenticado elimina su propia cuenta y todos sus datos."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        Receta.objects.filter(creador=user).delete()
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ValoracionesView(APIView):

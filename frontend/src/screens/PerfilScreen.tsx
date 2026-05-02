@@ -6,7 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
-import { getMiPerfil, getMisRecetas, getMisValoraciones, updatePerfil } from '../services/api';
+import { getMiPerfil, getMisRecetas, getMisValoraciones, updatePerfil, deleteReceta, deleteAccount } from '../services/api';
 
 export default function PerfilScreen({ navigation }: any) {
   const [perfil, setPerfil] = useState<any>(null);
@@ -67,6 +67,41 @@ export default function PerfilScreen({ navigation }: any) {
       Alert.alert('Error', 'No se pudo conectar al servidor');
     }
     setGuardando(false);
+  };
+
+  const eliminarRecetaPropia = (id: number, titulo: string) => {
+    Alert.alert(
+      'Eliminar receta',
+      `¿Seguro que quieres eliminar "${titulo}"? Esta acción no se puede deshacer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar', style: 'destructive',
+          onPress: async () => {
+            await deleteReceta(id);
+            setMisRecetas(prev => prev.filter((r: any) => r.id !== id));
+          },
+        },
+      ]
+    );
+  };
+
+  const eliminarCuenta = () => {
+    Alert.alert(
+      'Eliminar cuenta',
+      'Se eliminarán permanentemente tu cuenta, tus recetas y todas tus valoraciones. Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar mi cuenta', style: 'destructive',
+          onPress: async () => {
+            await deleteAccount();
+            await AsyncStorage.multiRemove(['token', 'user_id', 'username']);
+            navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
+          },
+        },
+      ]
+    );
   };
 
   const cerrarSesion = async () => {
@@ -194,24 +229,41 @@ export default function PerfilScreen({ navigation }: any) {
         <Text style={styles.vacio}>No has creado ninguna receta aún</Text>
       ) : (
         misRecetas.map((receta: any) => (
-          <TouchableOpacity
-            key={receta.id}
-            style={styles.recetaCard}
-            onPress={() => navigation.navigate('DetalleReceta', { receta })}
-          >
-            {receta.imagen_url
-              ? <Image source={{ uri: receta.imagen_url }} style={styles.recetaImagen} />
-              : <View style={[styles.recetaImagen, styles.sinImagen]} />}
-            <View style={styles.recetaInfo}>
-              <Text style={styles.recetaTitulo} numberOfLines={2}>{receta.titulo}</Text>
-              <Text style={styles.recetaMeta}>{receta.categoria} · {receta.tiempo_prep} min · {receta.calorias} kcal</Text>
-            </View>
-          </TouchableOpacity>
+          <View key={receta.id} style={styles.recetaCard}>
+            <TouchableOpacity
+              style={styles.recetaCardTouchable}
+              onPress={() => navigation.navigate('DetalleReceta', { receta })}
+            >
+              {receta.imagen_url
+                ? <Image source={{ uri: receta.imagen_url }} style={styles.recetaImagen} />
+                : <View style={[styles.recetaImagen, styles.sinImagen]} />}
+              <View style={styles.recetaInfo}>
+                <Text style={styles.recetaTitulo} numberOfLines={2}>{receta.titulo}</Text>
+                <Text style={styles.recetaMeta}>{receta.categoria} · {receta.tiempo_prep} min · {receta.calorias} kcal</Text>
+                {receta.estado === 'pendiente' && (
+                  <Text style={styles.estadoPendiente}>⏳ Pendiente de revisión</Text>
+                )}
+                {receta.estado === 'rechazada' && (
+                  <Text style={styles.estadoRechazada}>✕ Rechazada</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.recetaDeleteBtn}
+              onPress={() => eliminarRecetaPropia(receta.id, receta.titulo)}
+            >
+              <Text style={styles.recetaDeleteTexto}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
         ))
       )}
 
       <TouchableOpacity style={styles.cerrarBtn} onPress={cerrarSesion}>
         <Text style={styles.cerrarBtnTexto}>Cerrar sesión</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.eliminarCuentaBtn} onPress={eliminarCuenta}>
+        <Text style={styles.eliminarCuentaBtnTexto}>Eliminar mi cuenta</Text>
       </TouchableOpacity>
 
       <View style={{ height: 40 }} />
@@ -297,16 +349,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row', marginHorizontal: 16, marginBottom: 10,
     backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden',
     shadowColor: '#000', shadowOpacity: 0.06, shadowOffset: { width: 0, height: 1 }, elevation: 2,
+    alignItems: 'center',
   },
+  recetaCardTouchable: { flexDirection: 'row', flex: 1 },
   recetaImagen: { width: 80, height: 80 },
   recetaInfo: { flex: 1, padding: 12, justifyContent: 'center' },
   recetaTitulo: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   recetaMeta: { fontSize: 12, color: '#888' },
+  estadoPendiente: { fontSize: 11, color: '#e07a5f', fontWeight: 'bold', marginTop: 3 },
+  estadoRechazada: { fontSize: 11, color: '#e63946', fontWeight: 'bold', marginTop: 3 },
+  recetaDeleteBtn: { paddingHorizontal: 12, paddingVertical: 8 },
+  recetaDeleteTexto: { fontSize: 18 },
 
-  // Cerrar sesión
+  // Cerrar sesión / Eliminar cuenta
   cerrarBtn: {
-    margin: 16, marginTop: 20, padding: 14,
+    marginHorizontal: 16, marginTop: 20, padding: 14,
     borderRadius: 10, borderWidth: 1, borderColor: '#e63946', alignItems: 'center',
   },
   cerrarBtnTexto: { color: '#e63946', fontWeight: 'bold', fontSize: 15 },
+  eliminarCuentaBtn: {
+    marginHorizontal: 16, marginTop: 10, marginBottom: 8, padding: 14,
+    borderRadius: 10, backgroundColor: '#e63946', alignItems: 'center',
+  },
+  eliminarCuentaBtnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
 });
