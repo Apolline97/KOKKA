@@ -107,13 +107,17 @@ class RecetaViewSet(viewsets.ModelViewSet):
         serializer.save(creador=self.request.user, estado='pendiente')
 
     def destroy(self, request, *args, **kwargs):
-        receta = self.get_object()
+        try:
+            receta = Receta.objects.get(pk=kwargs['pk'])
+        except Receta.DoesNotExist:
+            return Response({'error': 'Receta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
         if receta.creador != request.user:
             return Response(
                 {'error': 'No tienes permiso para eliminar esta receta'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        return super().destroy(request, *args, **kwargs)
+        receta.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'], url_path='recomendadas')
     def recomendadas(self, request):
