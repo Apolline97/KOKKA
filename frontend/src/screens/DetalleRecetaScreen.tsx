@@ -4,6 +4,7 @@ import {
   ActivityIndicator, TextInput, Alert, Dimensions, Animated, RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { getReceta, getFavoritos, addFavorito, removeFavorito, getValoraciones, crearValoracion, deleteReceta } from '../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -65,6 +66,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
   }, [recetaBase.id]);
 
   useEffect(() => { cargar(); }, []);
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -127,11 +129,11 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
   const toggleFavorito = async () => {
     if (esFavorito) {
-      await removeFavorito(receta.id);
-      setEsFavorito(false);
+      const ok = await removeFavorito(receta.id);
+      if (ok) setEsFavorito(false);
     } else {
-      await addFavorito(receta.id);
-      setEsFavorito(true);
+      const data = await addFavorito(receta.id);
+      if (data?.id || data?.receta) setEsFavorito(true);
     }
   };
 

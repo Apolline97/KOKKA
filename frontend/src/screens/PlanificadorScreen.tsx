@@ -73,7 +73,11 @@ export default function PlanificadorScreen({ navigation }: any) {
   };
 
   const recetasModal = recetas
-    .filter((r: any) => r.categoria === tipoSeleccionado)
+    .filter((r: any) => {
+      if (r.categoria === tipoSeleccionado) return true;
+      if (r.categoria === 'Postre' && (tipoSeleccionado === 'Almuerzo' || tipoSeleccionado === 'Cena')) return true;
+      return false;
+    })
     .filter((r: any) => !soloFavoritas || idsFavoritos.includes(r.id));
 
   const asignarReceta = async (recetaId: number) => {

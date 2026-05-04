@@ -166,13 +166,14 @@ export const addFavorito = async (receta_id: number) => {
   return res.json();
 };
 
-export const removeFavorito = async (receta_id: number) => {
+export const removeFavorito = async (receta_id: number): Promise<boolean> => {
   const headers = await authHeaders();
-  await fetch(`${BASE_URL}/favoritos/`, {
+  const res = await fetch(`${BASE_URL}/favoritos/`, {
     method: 'DELETE',
     headers,
     body: JSON.stringify({ receta_id }),
   });
+  return res.ok;
 };
 
 // Planes
