@@ -305,6 +305,14 @@ class ValoracionesView(APIView):
             return Response({'error': 'receta_id y puntuacion son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            puntuacion_int = int(puntuacion)
+        except (ValueError, TypeError):
+            return Response({'error': 'La puntuación debe ser un número'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not (1 <= puntuacion_int <= 5):
+            return Response({'error': 'La puntuación debe estar entre 1 y 5'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
             receta = Receta.objects.get(id=receta_id)
         except Receta.DoesNotExist:
             return Response({'error': 'Receta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
@@ -312,7 +320,7 @@ class ValoracionesView(APIView):
         valoracion, created = Valoracion.objects.update_or_create(
             user=request.user,
             receta=receta,
-            defaults={'puntuacion': int(puntuacion), 'comentario': comentario}
+            defaults={'puntuacion': puntuacion_int, 'comentario': comentario}
         )
         return Response(
             ValoracionSerializer(valoracion).data,

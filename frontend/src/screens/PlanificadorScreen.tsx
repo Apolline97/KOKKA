@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { getPlanes, getRecetas, crearPlan, deletePlan, getFavoritos } from '../services/api';
+import { useFocusEffect } from '@react-navigation/native';
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const TIPOS = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'];
@@ -35,6 +37,7 @@ export default function PlanificadorScreen({ navigation }: any) {
   const [planes, setPlanes] = useState<any[]>([]);
   const [recetas, setRecetas] = useState<any[]>([]);
   const [cargando, setCargando] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [diaSeleccionado, setDiaSeleccionado] = useState('');
   const [tipoSeleccionado, setTipoSeleccionado] = useState('Almuerzo');
@@ -51,6 +54,14 @@ export default function PlanificadorScreen({ navigation }: any) {
   };
 
   useEffect(() => { cargarSemana(); }, [semanaBase]);
+
+  useFocusEffect(useCallback(() => { cargarSemana(); }, [semanaBase]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await cargarSemana();
+    setRefreshing(false);
+  };
 
   const abrirModal = async (fecha: string, tipo: string) => {
     setDiaSeleccionado(fecha);
@@ -105,6 +116,7 @@ export default function PlanificadorScreen({ navigation }: any) {
         <FlatList
           data={DIAS_SEMANA}
           keyExtractor={item => item}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#e07a5f']} tintColor="#e07a5f" />}
           renderItem={({ item, index }) => {
             const fecha = formatFecha(añadirDias(semanaBase, index));
             return (

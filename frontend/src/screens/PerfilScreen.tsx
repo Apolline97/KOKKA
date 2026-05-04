@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, ScrollView, Image,
+  ActivityIndicator, Alert, ScrollView, Image, RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions, useFocusEffect } from '@react-navigation/native';
@@ -13,6 +13,7 @@ export default function PerfilScreen({ navigation }: any) {
   const [misRecetas, setMisRecetas] = useState<any[]>([]);
   const [misValoraciones, setMisValoraciones] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [editando, setEditando] = useState(false);
 
@@ -23,6 +24,12 @@ export default function PerfilScreen({ navigation }: any) {
   const [fotoLocal, setFotoLocal] = useState<{ uri: string; type: string; name: string } | null>(null);
 
   useFocusEffect(useCallback(() => { cargar(); }, []));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await cargar();
+    setRefreshing(false);
+  };
 
   const cargar = async () => {
     try {
@@ -78,8 +85,9 @@ export default function PerfilScreen({ navigation }: any) {
         {
           text: 'Eliminar', style: 'destructive',
           onPress: async () => {
-            await deleteReceta(id);
-            setMisRecetas(prev => prev.filter((r: any) => r.id !== id));
+            const ok = await deleteReceta(id);
+            if (ok) setMisRecetas(prev => prev.filter((r: any) => r.id !== id));
+            else Alert.alert('Error', 'No se pudo eliminar la receta');
           },
         },
       ]
@@ -95,9 +103,13 @@ export default function PerfilScreen({ navigation }: any) {
         {
           text: 'Eliminar mi cuenta', style: 'destructive',
           onPress: async () => {
-            await deleteAccount();
-            await AsyncStorage.multiRemove(['token', 'user_id', 'username']);
-            navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
+            const ok = await deleteAccount();
+            if (ok) {
+              await AsyncStorage.multiRemove(['token', 'user_id', 'username']);
+              navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }));
+            } else {
+              Alert.alert('Error', 'No se pudo eliminar la cuenta');
+            }
           },
         },
       ]
@@ -118,7 +130,11 @@ export default function PerfilScreen({ navigation }: any) {
   const estrellas = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#e07a5f']} tintColor="#e07a5f" />}
+    >
 
       {/* ── Header ── */}
       <View style={styles.headerBg}>

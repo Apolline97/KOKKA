@@ -79,11 +79,16 @@ android {
 
     namespace "com.frontend"
     defaultConfig {
-        applicationId "com.frontend"
+        applicationId "com.kokka"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+    }
+    applicationVariants.all { variant ->
+        variant.outputs.configureEach {
+            outputFileName = "KOKKA-${variant.buildType.name}.apk"
+        }
     }
     signingConfigs {
         debug {

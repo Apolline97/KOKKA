@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
-  ActivityIndicator, TextInput, Alert, Dimensions, Animated,
+  ActivityIndicator, TextInput, Alert, Dimensions, Animated, RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getReceta, getFavoritos, addFavorito, removeFavorito, getValoraciones, crearValoracion, deleteReceta } from '../services/api';
@@ -19,6 +19,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
   const [miPuntuacion, setMiPuntuacion] = useState(0);
   const [miComentario, setMiComentario] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [vistaActual, setVistaActual] = useState<'detalle' | 'valoraciones'>('detalle');
 
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -33,38 +34,43 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
     setVistaActual(vista);
   };
 
-  useEffect(() => {
-    const cargar = async () => {
-      try {
-        const [recetaCompleta, dataFavs, storedId, storedUsername, vals] = await Promise.all([
-          getReceta(recetaBase.id),
-          getFavoritos(),
-          AsyncStorage.getItem('user_id'),
-          AsyncStorage.getItem('username'),
-          getValoraciones(recetaBase.id),
-        ]);
-        if (recetaCompleta?.id) setReceta(recetaCompleta);
-        if (Array.isArray(dataFavs)) {
-          setEsFavorito(dataFavs.some((f: any) => f.receta.id === recetaBase.id));
-        }
-        if (storedId) setUserId(parseInt(storedId));
-        if (Array.isArray(vals)) {
-          setValoraciones(vals);
-          if (storedUsername) {
-            const mia = vals.find((v: any) => v.username === storedUsername);
-            if (mia) {
-              setMiPuntuacion(mia.puntuacion);
-              setMiComentario(mia.comentario);
-            }
+  const cargar = useCallback(async () => {
+    try {
+      const [recetaCompleta, dataFavs, storedId, storedUsername, vals] = await Promise.all([
+        getReceta(recetaBase.id),
+        getFavoritos(),
+        AsyncStorage.getItem('user_id'),
+        AsyncStorage.getItem('username'),
+        getValoraciones(recetaBase.id),
+      ]);
+      if (recetaCompleta?.id) setReceta(recetaCompleta);
+      if (Array.isArray(dataFavs)) {
+        setEsFavorito(dataFavs.some((f: any) => f.receta.id === recetaBase.id));
+      }
+      if (storedId) setUserId(parseInt(storedId));
+      if (Array.isArray(vals)) {
+        setValoraciones(vals);
+        if (storedUsername) {
+          const mia = vals.find((v: any) => v.username === storedUsername);
+          if (mia) {
+            setMiPuntuacion(mia.puntuacion);
+            setMiComentario(mia.comentario);
           }
         }
-      } catch (_) {
-      } finally {
-        setCargando(false);
       }
-    };
-    cargar();
-  }, []);
+    } catch (_) {
+    } finally {
+      setCargando(false);
+    }
+  }, [recetaBase.id]);
+
+  useEffect(() => { cargar(); }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await cargar();
+    setRefreshing(false);
+  };
 
   const recargarValoraciones = async () => {
     try {
@@ -156,7 +162,10 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
       >
         {/* ── PANEL 1: Detalle ── */}
         <View style={{ width: SCREEN_WIDTH }}>
-          <ScrollView style={styles.container}>
+          <ScrollView
+            style={styles.container}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#e07a5f']} tintColor="#e07a5f" />}
+          >
             <TouchableOpacity style={styles.volver} onPress={() => navigation.goBack()}>
               <Text style={styles.volverTexto}>← Volver</Text>
             </TouchableOpacity>

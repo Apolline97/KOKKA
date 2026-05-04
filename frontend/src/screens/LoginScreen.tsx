@@ -30,6 +30,7 @@ export default function LoginScreen({ navigation }: any) {
       if (data.token) {
         await AsyncStorage.setItem('token', data.token);
         await AsyncStorage.setItem('user_id', String(data.user_id));
+        await AsyncStorage.setItem('username', data.username);
         navigation.replace('Main');
       } else {
         Alert.alert('Error', data.error || 'Credenciales incorrectas');
