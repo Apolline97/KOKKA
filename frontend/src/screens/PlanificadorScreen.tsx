@@ -72,9 +72,9 @@ export default function PlanificadorScreen({ navigation }: any) {
     setModalVisible(true);
   };
 
-  const recetasModal = soloFavoritas
-    ? recetas.filter((r: any) => idsFavoritos.includes(r.id))
-    : recetas;
+  const recetasModal = recetas
+    .filter((r: any) => r.categoria === tipoSeleccionado)
+    .filter((r: any) => !soloFavoritas || idsFavoritos.includes(r.id));
 
   const asignarReceta = async (recetaId: number) => {
     setModalVisible(false);
