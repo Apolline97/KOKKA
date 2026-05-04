@@ -16,6 +16,7 @@ export default function PerfilScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [rechazadasVisible, setRechazadasVisible] = useState(false);
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -240,39 +241,73 @@ export default function PerfilScreen({ navigation }: any) {
       )}
 
       {/* ── Mis recetas ── */}
-      <Text style={styles.seccion}>Mis recetas ({misRecetas.length})</Text>
-      {misRecetas.length === 0 ? (
-        <Text style={styles.vacio}>No has creado ninguna receta aún</Text>
-      ) : (
-        misRecetas.map((receta: any) => (
-          <View key={receta.id} style={styles.recetaCard}>
-            <TouchableOpacity
-              style={styles.recetaCardTouchable}
-              onPress={() => navigation.navigate('DetalleReceta', { receta })}
-            >
-              {receta.imagen_url
-                ? <Image source={{ uri: receta.imagen_url }} style={styles.recetaImagen} />
-                : <View style={[styles.recetaImagen, styles.sinImagen]} />}
-              <View style={styles.recetaInfo}>
-                <Text style={styles.recetaTitulo} numberOfLines={2}>{receta.titulo}</Text>
-                <Text style={styles.recetaMeta}>{receta.categoria} · {receta.tiempo_prep} min · {receta.calorias} kcal</Text>
-                {receta.estado === 'pendiente' && (
-                  <Text style={styles.estadoPendiente}>⏳ Pendiente de revisión</Text>
-                )}
-                {receta.estado === 'rechazada' && (
-                  <Text style={styles.estadoRechazada}>✕ Rechazada</Text>
-                )}
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.recetaDeleteBtn}
-              onPress={() => eliminarRecetaPropia(receta.id, receta.titulo)}
-            >
-              <Text style={styles.recetaDeleteTexto}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-        ))
-      )}
+      {(() => {
+        const activas = misRecetas.filter((r: any) => r.estado !== 'rechazada');
+        const rechazadas = misRecetas.filter((r: any) => r.estado === 'rechazada');
+        return (
+          <>
+            <Text style={styles.seccion}>Mis recetas ({activas.length})</Text>
+            {activas.length === 0 ? (
+              <Text style={styles.vacio}>No has creado ninguna receta aún</Text>
+            ) : (
+              activas.map((receta: any) => (
+                <View key={receta.id} style={styles.recetaCard}>
+                  <TouchableOpacity
+                    style={styles.recetaCardTouchable}
+                    onPress={() => navigation.navigate('DetalleReceta', { receta })}
+                  >
+                    {receta.imagen_url
+                      ? <Image source={{ uri: receta.imagen_url }} style={styles.recetaImagen} />
+                      : <View style={[styles.recetaImagen, styles.sinImagen]} />}
+                    <View style={styles.recetaInfo}>
+                      <Text style={styles.recetaTitulo} numberOfLines={2}>{receta.titulo}</Text>
+                      <Text style={styles.recetaMeta}>{receta.categoria} · {receta.tiempo_prep} min · {receta.calorias} kcal</Text>
+                      {receta.estado === 'pendiente' && (
+                        <Text style={styles.estadoPendiente}>⏳ Pendiente de revisión</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.recetaDeleteBtn}
+                    onPress={() => eliminarRecetaPropia(receta.id, receta.titulo)}
+                  >
+                    <Text style={styles.recetaDeleteTexto}>🗑️</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+
+            {rechazadas.length > 0 && (
+              <>
+                <TouchableOpacity
+                  style={styles.rechazadasHeader}
+                  onPress={() => setRechazadasVisible(!rechazadasVisible)}
+                >
+                  <Text style={styles.rechazadasHeaderTexto}>
+                    ✕ Recetas rechazadas ({rechazadas.length})
+                  </Text>
+                  <Text style={styles.chevron}>{rechazadasVisible ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+
+                {rechazadasVisible && rechazadas.map((receta: any) => (
+                  <View key={receta.id} style={styles.recetaCardRechazada}>
+                    <View style={styles.recetaInfo}>
+                      <Text style={styles.recetaTitulo} numberOfLines={2}>{receta.titulo}</Text>
+                      <Text style={styles.recetaMeta}>{receta.categoria} · {receta.tiempo_prep} min</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.eliminarRechazadaBtn}
+                      onPress={() => eliminarRecetaPropia(receta.id, receta.titulo)}
+                    >
+                      <Text style={styles.eliminarRechazadaBtnTexto}>Eliminar</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            )}
+          </>
+        );
+      })()}
 
       <TouchableOpacity style={styles.cerrarBtn} onPress={cerrarSesion}>
         <Text style={styles.cerrarBtnTexto}>Cerrar sesión</Text>
@@ -376,6 +411,23 @@ const styles = StyleSheet.create({
   estadoRechazada: { fontSize: 11, color: '#e63946', fontWeight: 'bold', marginTop: 3 },
   recetaDeleteBtn: { paddingHorizontal: 12, paddingVertical: 8 },
   recetaDeleteTexto: { fontSize: 18 },
+  rechazadasHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginHorizontal: 16, marginTop: 20, marginBottom: 8,
+    backgroundColor: '#fff0f0', borderRadius: 10, padding: 12,
+    borderWidth: 1, borderColor: '#f5c0c0',
+  },
+  rechazadasHeaderTexto: { fontSize: 14, fontWeight: 'bold', color: '#e63946' },
+  recetaCardRechazada: {
+    flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 8,
+    backgroundColor: '#fff8f8', borderRadius: 10, padding: 12,
+    borderWidth: 1, borderColor: '#f5c0c0',
+  },
+  eliminarRechazadaBtn: {
+    backgroundColor: '#e63946', borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8,
+  },
+  eliminarRechazadaBtnTexto: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
 
   // Cerrar sesión / Eliminar cuenta
   cerrarBtn: {
