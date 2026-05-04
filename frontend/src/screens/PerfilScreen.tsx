@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, ScrollView, Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CommonActions } from '@react-navigation/native';
+import { CommonActions, useFocusEffect } from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { getMiPerfil, getMisRecetas, getMisValoraciones, updatePerfil, deleteReceta, deleteAccount } from '../services/api';
 
@@ -22,7 +22,7 @@ export default function PerfilScreen({ navigation }: any) {
   const [alergias, setAlergias] = useState('');
   const [fotoLocal, setFotoLocal] = useState<{ uri: string; type: string; name: string } | null>(null);
 
-  useEffect(() => { cargar(); }, []);
+  useFocusEffect(useCallback(() => { cargar(); }, []));
 
   const cargar = async () => {
     try {
